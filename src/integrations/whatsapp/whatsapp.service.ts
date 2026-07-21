@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { AiService } from '../../ai/ai.service';
+import { ConversationMemoryService } from '../../ai/conversation-memory.service';
 
 /**
  * Service da integracao com o WhatsApp Business Platform (Meta Cloud API).
@@ -20,6 +21,7 @@ export class WhatsappService {
   constructor(
     private readonly config: ConfigService,
     private readonly ai: AiService,
+    private readonly memory: ConversationMemoryService,
   ) {}
 
   /**
@@ -47,8 +49,18 @@ export class WhatsappService {
 
     this.logger.log(`Mensagem de ${from}: "${text}"`);
 
-    // Pergunta a IA (Claude) como responder e devolve a resposta ao usuario.
-    const reply = await this.ai.generateReply(text);
+    // 1. Guarda a mensagem do usuario no historico da conversa.
+    await this.memory.append(from, { role: 'user', content: text });
+
+    // 2. Pergunta a IA (Claude) considerando TODO o historico do contato.
+    //    Passa o contato como contexto (para auditoria e ferramentas de sistema).
+    const history = await this.memory.getHistory(from);
+    const reply = await this.ai.generateReply(history, { contact: from });
+
+    // 3. Guarda a resposta da IA no historico (para lembrar no proximo turno).
+    await this.memory.append(from, { role: 'assistant', content: reply });
+
+    // 4. Envia a resposta ao usuario.
     await this.sendTextMessage(from, reply);
   }
 

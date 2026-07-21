@@ -9,7 +9,7 @@ async function bootstrap() {
   await app.listen(port);
 
   const logger = new Logger('Bootstrap');
-  logger.log(`Nexa backend rodando em http://localhost:${port}`);
+  logger.log(`Kyrius backend rodando em http://localhost:${port}`);
 }
 
 bootstrap();

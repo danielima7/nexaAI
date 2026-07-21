@@ -1,7 +1,7 @@
 {
-  "name": "nexa-backend",
+  "name": "kyrius-backend",
   "version": "0.1.0",
-  "description": "Nexa - Hub Universal de Integracoes Inteligentes (backend)",
+  "description": "Kyrius - Hub Universal de Integracoes Inteligentes (backend)",
   "private": true,
   "scripts": {
     "build": "nest build",
@@ -15,9 +15,12 @@
     "@nestjs/config": "^3.2.3",
     "@nestjs/core": "^10.4.4",
     "@nestjs/platform-express": "^10.4.4",
+    "@prisma/client": "^6.19.3",
     "axios": "^1.7.7",
+    "prisma": "^6.19.3",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "stripe": "^22.3.2"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.4.5",

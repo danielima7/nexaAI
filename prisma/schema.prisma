@@ -1,0 +1,36 @@
+// Schema do banco de dados do Nexa (Prisma + PostgreSQL).
+// Nesta fase: histórico de conversas + log de operações (auditoria).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Uma mensagem trocada com um contato (histórico de conversa persistente).
+model Message {
+  id        String   @id @default(uuid())
+  contact   String // número de WhatsApp do contato
+  role      String // 'user' | 'assistant'
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([contact, createdAt])
+}
+
+/// Registro de cada execução de ferramenta pela IA (auditoria/logs).
+model OperationLog {
+  id        String   @id @default(uuid())
+  contact   String // contato que originou a operação (se houver)
+  tool      String // nome da ferramenta executada
+  input     Json // argumentos recebidos
+  result    String // resultado (texto devolvido à IA)
+  success   Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([contact, createdAt])
+  @@index([tool, createdAt])
+}
