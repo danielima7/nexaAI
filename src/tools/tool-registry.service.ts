@@ -75,6 +75,8 @@ export class ToolRegistryService {
           input: input ?? {},
           result: result.slice(0, 2000),
           success,
+          organizationId: context?.organizationId,
+          userId: context?.userId,
         },
       });
     } catch (e: any) {

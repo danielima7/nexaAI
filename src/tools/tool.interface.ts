@@ -8,6 +8,10 @@ import Anthropic from '@anthropic-ai/sdk';
 export interface ToolContext {
   /** Numero de WhatsApp (ou identificador) de quem originou a acao. */
   contact?: string;
+  /** Organizacao (tenant) a que o contato pertence. */
+  organizationId?: string;
+  /** Usuario que originou a acao. */
+  userId?: string;
 }
 
 /**

@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { AiService } from '../../ai/ai.service';
 import { ConversationMemoryService } from '../../ai/conversation-memory.service';
+import { TenantService } from '../../tenant/tenant.service';
 
 /**
  * Service da integracao com o WhatsApp Business Platform (Meta Cloud API).
@@ -22,6 +23,7 @@ export class WhatsappService {
     private readonly config: ConfigService,
     private readonly ai: AiService,
     private readonly memory: ConversationMemoryService,
+    private readonly tenant: TenantService,
   ) {}
 
   /**
@@ -49,16 +51,20 @@ export class WhatsappService {
 
     this.logger.log(`Mensagem de ${from}: "${text}"`);
 
-    // 1. Guarda a mensagem do usuario no historico da conversa.
-    await this.memory.append(from, { role: 'user', content: text });
+    // 0. Resolve (ou cria) a organizacao e o usuario deste numero (multi-tenant).
+    const { user, organization } = await this.tenant.resolveByWhatsapp(from);
+    const scope = { organizationId: organization.id, userId: user.id };
+
+    // 1. Guarda a mensagem do usuario no historico da conversa (escopada).
+    await this.memory.append(from, { role: 'user', content: text }, scope);
 
     // 2. Pergunta a IA (Claude) considerando TODO o historico do contato.
-    //    Passa o contato como contexto (para auditoria e ferramentas de sistema).
+    //    Passa contato + organizacao + usuario como contexto (auditoria/tools).
     const history = await this.memory.getHistory(from);
-    const reply = await this.ai.generateReply(history, { contact: from });
+    const reply = await this.ai.generateReply(history, { contact: from, ...scope });
 
     // 3. Guarda a resposta da IA no historico (para lembrar no proximo turno).
-    await this.memory.append(from, { role: 'assistant', content: reply });
+    await this.memory.append(from, { role: 'assistant', content: reply }, scope);
 
     // 4. Envia a resposta ao usuario.
     await this.sendTextMessage(from, reply);

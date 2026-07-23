@@ -49,10 +49,23 @@ export class ConversationMemoryService {
 
   /**
    * Persiste uma mensagem no histórico do contato.
+   * @param contact numero de WhatsApp
+   * @param message a mensagem (role + content)
+   * @param scope organizacao/usuario (multi-tenant), opcional
    */
-  async append(userId: string, message: ChatMessage): Promise<void> {
+  async append(
+    contact: string,
+    message: ChatMessage,
+    scope?: { organizationId?: string; userId?: string },
+  ): Promise<void> {
     await this.prisma.message.create({
-      data: { contact: userId, role: message.role, content: message.content },
+      data: {
+        contact,
+        role: message.role,
+        content: message.content,
+        organizationId: scope?.organizationId,
+        userId: scope?.userId,
+      },
     });
   }
 

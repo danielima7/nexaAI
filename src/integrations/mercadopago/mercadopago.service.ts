@@ -1,29 +1,18 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import axios, { AxiosInstance } from 'axios';
 
 /**
  * Service da integracao com o Mercado Pago (pagamentos).
  *
- * Apenas operacoes de CONSULTA (listar pagamentos, somar recebido, detalhar).
- * Sem operacoes que movimentam dinheiro, por seguranca.
+ * Multi-tenant: cada metodo recebe o `token` (access token) da organizacao.
+ * Apenas consultas (sem movimentar dinheiro).
  */
 @Injectable()
 export class MercadopagoService {
   private readonly logger = new Logger(MercadopagoService.name);
   private readonly baseUrl = 'https://api.mercadopago.com';
 
-  constructor(private readonly config: ConfigService) {}
-
-  /** O token esta configurado no .env? */
-  isConfigured(): boolean {
-    const token = this.config.get<string>('MERCADOPAGO_ACCESS_TOKEN');
-    return !!token && token !== 'COLE_AQUI_O_ACCESS_TOKEN_DE_TESTE';
-  }
-
-  /** Cliente HTTP autenticado. */
-  private http(): AxiosInstance {
-    const token = this.config.get<string>('MERCADOPAGO_ACCESS_TOKEN');
+  private http(token: string): AxiosInstance {
     return axios.create({
       baseURL: this.baseUrl,
       headers: {
@@ -40,11 +29,10 @@ export class MercadopagoService {
   }
 
   /** Busca pagamentos recentes (mais novos primeiro). */
-  async searchPayments(params: {
-    limit?: number;
-    status?: string;
-    days?: number;
-  }): Promise<any[]> {
+  async searchPayments(
+    token: string,
+    params: { limit?: number; status?: string; days?: number },
+  ): Promise<any[]> {
     const query: Record<string, any> = {
       sort: 'date_created',
       criteria: 'desc',
@@ -56,32 +44,31 @@ export class MercadopagoService {
       query.begin_date = `NOW-${params.days}DAYS`;
       query.end_date = 'NOW';
     }
-    const { data } = await this.http().get('/v1/payments/search', {
+    const { data } = await this.http(token).get('/v1/payments/search', {
       params: query,
     });
     return data?.results ?? [];
   }
 
   /** Detalha um pagamento pelo ID. */
-  async getPayment(id: string): Promise<any> {
-    const { data } = await this.http().get(`/v1/payments/${id}`);
+  async getPayment(token: string, id: string): Promise<any> {
+    const { data } = await this.http(token).get(`/v1/payments/${id}`);
     return data;
   }
 
-  /**
-   * Soma o total aprovado (recebido) nos ultimos N dias, paginando os
-   * resultados.
-   */
-  async sumApproved(days = 30): Promise<{ total: number; currency: string; count: number }> {
+  /** Soma o total aprovado (recebido) nos ultimos N dias. */
+  async sumApproved(
+    token: string,
+    days = 30,
+  ): Promise<{ total: number; currency: string; count: number }> {
     let offset = 0;
     const limit = 100;
     let total = 0;
     let count = 0;
     let currency = 'BRL';
-
     // eslint-disable-next-line no-constant-condition
     while (true) {
-      const { data } = await this.http().get('/v1/payments/search', {
+      const { data } = await this.http(token).get('/v1/payments/search', {
         params: {
           status: 'approved',
           range: 'date_created',

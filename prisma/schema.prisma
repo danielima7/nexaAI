@@ -1,5 +1,5 @@
-// Schema do banco de dados do Nexa (Prisma + PostgreSQL).
-// Nesta fase: histórico de conversas + log de operações (auditoria).
+// Schema do banco de dados do Kyrius (Prisma + PostgreSQL).
+// Fase 1 multi-tenant: organizacoes, usuarios, e escopo de conversas/logs.
 
 generator client {
   provider = "prisma-client-js"
@@ -10,27 +10,67 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// Uma mensagem trocada com um contato (histórico de conversa persistente).
-model Message {
+/// Uma empresa/cliente do Kyrius (tenant).
+model Organization {
   id        String   @id @default(uuid())
-  contact   String // número de WhatsApp do contato
-  role      String // 'user' | 'assistant'
-  content   String
+  name      String
   createdAt DateTime @default(now())
 
-  @@index([contact, createdAt])
+  users User[]
 }
 
-/// Registro de cada execução de ferramenta pela IA (auditoria/logs).
+/// Um usuario, pertencente a uma organizacao. Identificado pelo WhatsApp.
+model User {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String?
+  whatsappPhone  String   @unique
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId])
+}
+
+/// Credenciais de uma integracao conectada por uma organizacao (multi-tenant).
+/// DEV: credentials em texto. PRODUCAO: criptografar (ex: Secrets Manager).
+model Connection {
+  id             String   @id @default(uuid())
+  organizationId String
+  provider       String // 'hubspot' | 'stripe' | 'mercadopago' | 'asaas' | 'google'
+  credentials    Json // ex: { "token": "..." }
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([organizationId, provider])
+}
+
+/// Uma mensagem trocada com um contato (historico de conversa persistente).
+model Message {
+  id             String   @id @default(uuid())
+  contact        String // numero de WhatsApp do contato
+  role           String // 'user' | 'assistant'
+  content        String
+  organizationId String? // escopo multi-tenant
+  userId         String?
+  createdAt      DateTime @default(now())
+
+  @@index([contact, createdAt])
+  @@index([organizationId, createdAt])
+}
+
+/// Registro de cada execucao de ferramenta pela IA (auditoria/logs).
 model OperationLog {
-  id        String   @id @default(uuid())
-  contact   String // contato que originou a operação (se houver)
-  tool      String // nome da ferramenta executada
-  input     Json // argumentos recebidos
-  result    String // resultado (texto devolvido à IA)
-  success   Boolean  @default(true)
-  createdAt DateTime @default(now())
+  id             String   @id @default(uuid())
+  contact        String // contato que originou a operacao (se houver)
+  tool           String // nome da ferramenta executada
+  input          Json // argumentos recebidos
+  result         String // resultado (texto devolvido a IA)
+  success        Boolean  @default(true)
+  organizationId String? // escopo multi-tenant
+  userId         String?
+  createdAt      DateTime @default(now())
 
   @@index([contact, createdAt])
   @@index([tool, createdAt])
+  @@index([organizationId, createdAt])
 }

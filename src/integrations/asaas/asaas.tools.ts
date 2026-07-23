@@ -1,10 +1,12 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ToolRegistryService } from '../../tools/tool-registry.service';
+import { ConnectionsService } from '../../connections/connections.service';
+import { ToolContext } from '../../tools/tool.interface';
 import { AsaasService } from './asaas.service';
 
 /**
- * Registra as ferramentas do Asaas no ToolRegistry.
- * Consultas financeiras + cadastro de cliente (sem movimentar dinheiro).
+ * Ferramentas do Asaas (multi-tenant). Cada execucao resolve a API key da
+ * organizacao (conta conectada da org ou fallback do .env).
  */
 @Injectable()
 export class AsaasTools implements OnModuleInit {
@@ -13,23 +15,23 @@ export class AsaasTools implements OnModuleInit {
   constructor(
     private readonly registry: ToolRegistryService,
     private readonly asaas: AsaasService,
+    private readonly connections: ConnectionsService,
   ) {}
+
+  private key(context?: ToolContext): Promise<string | undefined> {
+    return this.connections.resolveToken(context, 'asaas', 'ASAAS_API_KEY');
+  }
+
+  private naoConectado(): string {
+    return 'O Asaas ainda nao esta conectado para a sua organizacao.';
+  }
 
   private formatPayment(p: any): string {
     const valor = this.asaas.formatAmount(p.value);
-    const venc = p.dueDate ?? '';
-    const cliente = p.customer ?? '';
-    return `- ${valor} — vence ${venc} — cliente ${cliente} (${p.status})`;
+    return `- ${valor} — vence ${p.dueDate ?? ''} — cliente ${p.customer ?? ''} (${p.status})`;
   }
 
   onModuleInit(): void {
-    if (!this.asaas.isConfigured()) {
-      this.logger.warn(
-        'ASAAS_API_KEY nao configurado — ferramentas do Asaas nao registradas.',
-      );
-      return;
-    }
-
     this.registry.register({
       definition: {
         name: 'asaas_saldo',
@@ -37,8 +39,10 @@ export class AsaasTools implements OnModuleInit {
           'Consulta o saldo da conta Asaas. Use quando o usuario perguntar sobre saldo no Asaas.',
         input_schema: { type: 'object', properties: {} },
       },
-      execute: async () => {
-        const saldo = await this.asaas.getBalance();
+      execute: async (_input, context) => {
+        const key = await this.key(context);
+        if (!key) return this.naoConectado();
+        const saldo = await this.asaas.getBalance(key);
         return `Saldo Asaas: ${this.asaas.formatAmount(saldo)}.`;
       },
     });
@@ -47,14 +51,15 @@ export class AsaasTools implements OnModuleInit {
       definition: {
         name: 'asaas_cobrancas_vencidas',
         description:
-          'Lista as cobrancas VENCIDAS (clientes inadimplentes) no Asaas. Use quando o usuario perguntar sobre inadimplentes, cobrancas vencidas ou em atraso.',
+          'Lista as cobrancas VENCIDAS (clientes inadimplentes) no Asaas. Use quando o usuario perguntar sobre inadimplentes ou cobrancas em atraso.',
         input_schema: { type: 'object', properties: {} },
       },
-      execute: async () => {
-        const cobrancas = await this.asaas.overduePayments();
-        if (cobrancas.length === 0) {
+      execute: async (_input, context) => {
+        const key = await this.key(context);
+        if (!key) return this.naoConectado();
+        const cobrancas = await this.asaas.overduePayments(key);
+        if (cobrancas.length === 0)
           return 'Nenhuma cobranca vencida (nenhum inadimplente). 🎉';
-        }
         return `Cobrancas vencidas (${cobrancas.length}):\n${cobrancas
           .map((p) => this.formatPayment(p))
           .join('\n')}`;
@@ -69,19 +74,17 @@ export class AsaasTools implements OnModuleInit {
         input_schema: {
           type: 'object',
           properties: {
-            dias: {
-              type: 'number',
-              description: 'Numero de dias a frente (1 = ate amanha). Padrao 1.',
-            },
+            dias: { type: 'number', description: 'Dias a frente (1 = ate amanha). Padrao 1.' },
           },
         },
       },
-      execute: async (input) => {
+      execute: async (input, context) => {
+        const key = await this.key(context);
+        if (!key) return this.naoConectado();
         const dias = input?.dias ?? 1;
-        const cobrancas = await this.asaas.upcomingPayments(dias);
-        if (cobrancas.length === 0) {
+        const cobrancas = await this.asaas.upcomingPayments(key, dias);
+        if (cobrancas.length === 0)
           return `Nenhuma cobranca a vencer nos proximos ${dias} dia(s).`;
-        }
         return `Cobrancas a vencer em ${dias} dia(s) (${cobrancas.length}):\n${cobrancas
           .map((p) => this.formatPayment(p))
           .join('\n')}`;
@@ -104,8 +107,10 @@ export class AsaasTools implements OnModuleInit {
           required: ['name', 'cpfCnpj'],
         },
       },
-      execute: async (input) => {
-        const cliente = await this.asaas.createCustomer(input);
+      execute: async (input, context) => {
+        const key = await this.key(context);
+        if (!key) return this.naoConectado();
+        const cliente = await this.asaas.createCustomer(key, input);
         return `Cliente cadastrado no Asaas com sucesso. ID: ${cliente.id}, nome: ${cliente.name}.`;
       },
     });
@@ -123,17 +128,17 @@ export class AsaasTools implements OnModuleInit {
           },
         },
       },
-      execute: async (input) => {
-        const clientes = await this.asaas.findCustomers(input ?? {});
-        if (clientes.length === 0) {
-          return 'Nenhum cliente encontrado no Asaas.';
-        }
+      execute: async (input, context) => {
+        const key = await this.key(context);
+        if (!key) return this.naoConectado();
+        const clientes = await this.asaas.findCustomers(key, input ?? {});
+        if (clientes.length === 0) return 'Nenhum cliente encontrado no Asaas.';
         return `Clientes encontrados (${clientes.length}):\n${clientes
           .map((c) => `- ${c.name} (${c.cpfCnpj ?? 's/ documento'}) ID ${c.id}`)
           .join('\n')}`;
       },
     });
 
-    this.logger.log('Ferramentas do Asaas registradas.');
+    this.logger.log('Ferramentas do Asaas registradas (multi-tenant).');
   }
 }

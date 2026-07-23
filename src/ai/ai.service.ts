@@ -74,10 +74,25 @@ export class AiService {
         const response = await this.client.messages.create({
           model: this.model,
           max_tokens: 1024,
-          system: this.systemPrompt,
+          // Prompt caching: o marcador no ultimo bloco de system faz a API
+          // cachear TUDO que vem antes (ferramentas + system). Nas chamadas
+          // seguintes, esse prefixo custa ~10% — grande reducao de custo.
+          system: [
+            {
+              type: 'text',
+              text: this.systemPrompt,
+              cache_control: { type: 'ephemeral' },
+            },
+          ],
           messages,
           ...(toolDefs.length > 0 ? { tools: toolDefs } : {}),
         });
+
+        // Log de cache (verificar economia): read = tokens servidos do cache.
+        const u = response.usage;
+        this.logger.debug(
+          `tokens: input=${u.input_tokens} cache_write=${u.cache_creation_input_tokens ?? 0} cache_read=${u.cache_read_input_tokens ?? 0} output=${u.output_tokens}`,
+        );
 
         // A IA quer usar uma ou mais ferramentas.
         if (response.stop_reason === 'tool_use') {
