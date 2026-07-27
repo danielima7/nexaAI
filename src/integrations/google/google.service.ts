@@ -5,6 +5,9 @@ import { google } from 'googleapis';
 /**
  * Service da integracao com o Google (Gmail + Google Agenda/Calendar).
  *
+ * Tambem funciona como provedor de autenticacao para os demais produtos
+ * Google do Kyrius (ex: SheetsService), que reutilizam o mesmo consentimento.
+ *
  * Multi-tenant: o client_id/client_secret sao do app (globais), mas o
  * refresh_token e POR ORGANIZACAO. Cada metodo recebe o refreshToken da org
  * (resolvido pelo ConnectionsService — conta da org ou fallback do .env).
@@ -13,10 +16,22 @@ import { google } from 'googleapis';
 export class GoogleService {
   private readonly logger = new Logger(GoogleService.name);
 
+  /**
+   * Permissoes pedidas na tela de consentimento.
+   *
+   * ATENCAO: ao mudar esta lista, o refresh_token ja emitido NAO ganha os
+   * novos escopos — a organizacao precisa reconectar o Google (/google/auth).
+   *
+   * `drive.metadata.readonly` permite apenas descobrir as planilhas do usuario
+   * (nome/id) para localiza-las pelo nome; nao le o conteudo de outros
+   * arquivos do Drive. O conteudo das planilhas vem pelo escopo `spreadsheets`.
+   */
   static readonly SCOPES = [
     'https://www.googleapis.com/auth/gmail.readonly',
     'https://www.googleapis.com/auth/gmail.send',
     'https://www.googleapis.com/auth/calendar',
+    'https://www.googleapis.com/auth/spreadsheets',
+    'https://www.googleapis.com/auth/drive.metadata.readonly',
   ];
 
   constructor(private readonly config: ConfigService) {}
@@ -58,8 +73,12 @@ export class GoogleService {
     return tokens;
   }
 
-  /** Cliente OAuth autenticado com o refresh_token informado. */
-  private authorizedClient(refreshToken: string) {
+  /**
+   * Cliente OAuth autenticado com o refresh_token informado.
+   * Publico porque os outros services do Google (ex: Sheets) reutilizam
+   * o mesmo consentimento desta conta.
+   */
+  authorizedClient(refreshToken: string) {
     const client = this.oauthClient();
     client.setCredentials({ refresh_token: refreshToken });
     return client;
