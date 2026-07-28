@@ -66,8 +66,10 @@ export class AiService {
         content: m.content,
       }));
 
-      // Ferramentas disponiveis (vazio = comportamento de chat puro).
-      const toolDefs = this.tools.getDefinitions();
+      // Ferramentas disponiveis para esta audiencia (vazio = chat puro).
+      // Conversa com publico externo so enxerga ferramentas marcadas como
+      // `public`; o padrao (`owner`) mantem os canais atuais inalterados.
+      const toolDefs = this.tools.getDefinitions(context?.audience);
 
       // Loop de tool use: repete enquanto a IA pedir para usar ferramentas.
       for (let round = 0; round < this.MAX_TOOL_ROUNDS; round++) {

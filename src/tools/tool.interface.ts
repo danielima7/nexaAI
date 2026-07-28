@@ -1,6 +1,17 @@
 import Anthropic from '@anthropic-ai/sdk';
 
 /**
+ * Quem esta do outro lado da conversa.
+ *
+ * - `owner`  — pessoa da propria organizacao (dono/equipe). Fala pelo WhatsApp
+ *              corporativo ou pelo chat interno. Enxerga todas as ferramentas.
+ * - `public` — pessoa de fora (ex: seguidor que mandou Direct no Instagram).
+ *              E cliente DO cliente: nunca pode acessar dados internos como
+ *              saldo bancario, CRM, planilhas ou e-mail da organizacao.
+ */
+export type ToolAudience = 'owner' | 'public';
+
+/**
  * Contexto da execucao de uma ferramenta (quem originou a acao).
  * Usado para auditoria (OperationLog) e para ferramentas que precisam saber
  * o contato (ex: consultar o proprio historico).
@@ -12,6 +23,11 @@ export interface ToolContext {
   organizationId?: string;
   /** Usuario que originou a acao. */
   userId?: string;
+  /**
+   * Audiencia da conversa. Ausente = `owner`, porque todos os canais atuais
+   * (WhatsApp corporativo e chat web) sao do proprio dono.
+   */
+  audience?: ToolAudience;
 }
 
 /**
@@ -24,6 +40,15 @@ export interface ToolContext {
 export interface AgentTool {
   /** Definicao no formato que a API do Claude espera (nome, descricao, schema). */
   definition: Anthropic.Tool;
+
+  /**
+   * Para quem esta ferramenta pode ser exposta.
+   *
+   * OMITIR SIGNIFICA `owner` (fail-closed) — de proposito: uma ferramenta nova
+   * nasce privada, e so vira publica quando alguem decidir isso explicitamente.
+   * O contrario faria uma integracao futura vazar dados internos por esquecimento.
+   */
+  audience?: ToolAudience;
 
   /**
    * Executa a ferramenta com os argumentos que a IA forneceu.

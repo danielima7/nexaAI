@@ -1,6 +1,12 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  carregarChave,
+  cifrar,
+  decifrar,
+  estaCifrado,
+} from './credentials-crypto';
 
 /**
  * Gerencia as credenciais das integracoes POR ORGANIZACAO (multi-tenant).
@@ -11,7 +17,9 @@ import { PrismaService } from '../prisma/prisma.service';
  * novo (que vira uma organizacao automaticamente em `TenantService`) herdaria
  * as credenciais globais e conseguiria ler o Gmail/Drive/CRM/financeiro do dono.
  *
- * DEV: credenciais guardadas em texto. PRODUCAO: criptografar.
+ * Credenciais em repouso: cifradas com AES-256-GCM (ver `credentials-crypto`),
+ * usando `CONNECTION_ENCRYPTION_KEY`. A leitura ainda aceita registros antigos
+ * em texto plano para nao quebrar durante a migracao — ver `onModuleInit`.
  */
 @Injectable()
 export class ConnectionsService implements OnModuleInit {
@@ -22,8 +30,8 @@ export class ConnectionsService implements OnModuleInit {
     private readonly config: ConfigService,
   ) {}
 
-  /** Avisa uma unica vez, no boot, se o fallback global esta desativado. */
-  onModuleInit(): void {
+  /** Diagnostico de configuracao no boot (roda uma vez). */
+  async onModuleInit(): Promise<void> {
     if (!this.ownerOrganizationId()) {
       this.logger.warn(
         'OWNER_ORGANIZATION_ID nao configurado: o fallback para as credenciais ' +
@@ -31,6 +39,44 @@ export class ConnectionsService implements OnModuleInit {
           'as proprias contas.',
       );
     }
+
+    if (!this.chave()) {
+      this.logger.error(
+        'CONNECTION_ENCRYPTION_KEY ausente ou invalida (esperado: 64 caracteres hex). ' +
+          'Nenhuma credencial nova podera ser salva. Gere com: ' +
+          'node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"',
+      );
+      return;
+    }
+
+    await this.avisarPendentesDeMigracao();
+  }
+
+  /**
+   * Conta quantas conexoes ainda estao em texto plano. E so um alerta: a
+   * migracao e explicita (`npm run credenciais:cifrar`), nunca automatica no
+   * boot — reescrever o banco sozinho na subida e um jeito rapido de perder
+   * credencial se a chave estiver errada.
+   */
+  private async avisarPendentesDeMigracao(): Promise<void> {
+    try {
+      const todas = await this.prisma.connection.findMany();
+      const emClaro = todas.filter((c) => !estaCifrado(c.credentials));
+      if (emClaro.length > 0) {
+        this.logger.warn(
+          `${emClaro.length} conexao(oes) ainda em TEXTO PLANO no banco ` +
+            `(${emClaro.map((c) => c.provider).join(', ')}). ` +
+            'Rode: npm run credenciais:cifrar',
+        );
+      }
+    } catch (e: any) {
+      this.logger.warn(`Nao foi possivel verificar as conexoes: ${e?.message}`);
+    }
+  }
+
+  /** Chave de criptografia das credenciais (undefined = nao configurada). */
+  private chave(): Buffer | undefined {
+    return carregarChave(this.config.get<string>('CONNECTION_ENCRYPTION_KEY'));
   }
 
   /**
@@ -42,23 +88,71 @@ export class ConnectionsService implements OnModuleInit {
     return raw ? raw : undefined;
   }
 
-  /** Busca a conexao de uma organizacao para um provedor. */
-  async get(organizationId: string, provider: string) {
-    return this.prisma.connection.findUnique({
-      where: { organizationId_provider: { organizationId, provider } },
-    });
+  /**
+   * Devolve as credenciais em claro a partir do que esta guardado.
+   * Aceita registros antigos em texto plano (migracao ainda pendente).
+   */
+  private abrir(
+    credentials: any,
+    provider: string,
+  ): Record<string, any> | undefined {
+    if (!estaCifrado(credentials)) {
+      // Registro legado: ainda nao migrado. Continua utilizavel de proposito,
+      // para nao derrubar integracoes que ja funcionam.
+      return credentials ?? undefined;
+    }
+
+    const chave = this.chave();
+    if (!chave) {
+      this.logger.error(
+        `Conexao "${provider}" esta cifrada mas CONNECTION_ENCRYPTION_KEY nao esta configurada.`,
+      );
+      return undefined;
+    }
+
+    try {
+      return decifrar(credentials, chave);
+    } catch (e: any) {
+      this.logger.error(
+        `Falha ao decifrar a conexao "${provider}": ${e?.message}. ` +
+          'A chave pode ter mudado ou o registro foi adulterado.',
+      );
+      return undefined;
+    }
   }
 
-  /** Cria/atualiza a conexao de uma organizacao para um provedor. */
+  /** Busca a conexao de uma organizacao, com as credenciais ja em claro. */
+  async get(organizationId: string, provider: string) {
+    const conn = await this.prisma.connection.findUnique({
+      where: { organizationId_provider: { organizationId, provider } },
+    });
+    if (!conn) return null;
+
+    return {
+      ...conn,
+      credentials: this.abrir(conn.credentials, provider) ?? {},
+    };
+  }
+
+  /** Cria/atualiza a conexao de uma organizacao, cifrando as credenciais. */
   async set(
     organizationId: string,
     provider: string,
     credentials: Record<string, any>,
   ) {
+    const chave = this.chave();
+    if (!chave) {
+      // Falha alto: gravar em texto plano em silencio seria pior do que quebrar.
+      throw new Error(
+        'CONNECTION_ENCRYPTION_KEY nao configurada — nao e possivel salvar credenciais com seguranca.',
+      );
+    }
+
+    const cifrado = cifrar(credentials, chave);
     return this.prisma.connection.upsert({
       where: { organizationId_provider: { organizationId, provider } },
-      create: { organizationId, provider, credentials },
-      update: { credentials },
+      create: { organizationId, provider, credentials: cifrado },
+      update: { credentials: cifrado },
     });
   }
 

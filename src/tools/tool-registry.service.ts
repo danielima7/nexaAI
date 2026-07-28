@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import Anthropic from '@anthropic-ai/sdk';
-import { AgentTool, ToolContext } from './tool.interface';
+import { AgentTool, ToolAudience, ToolContext } from './tool.interface';
 import { PrismaService } from '../prisma/prisma.service';
 
 /**
@@ -19,7 +19,9 @@ export class ToolRegistryService {
   /** Registra uma ferramenta. Chamado por cada integracao na inicializacao. */
   register(tool: AgentTool): void {
     this.tools.set(tool.definition.name, tool);
-    this.logger.log(`Tool registrada: ${tool.definition.name}`);
+    this.logger.log(
+      `Tool registrada: ${tool.definition.name} [${this.audienceOf(tool)}]`,
+    );
   }
 
   /** Ha alguma ferramenta registrada? */
@@ -27,9 +29,31 @@ export class ToolRegistryService {
     return this.tools.size > 0;
   }
 
-  /** Lista as definicoes para enviar ao Claude. */
-  getDefinitions(): Anthropic.Tool[] {
-    return [...this.tools.values()].map((t) => t.definition);
+  /** Audiencia efetiva da ferramenta (omitida = `owner`, fail-closed). */
+  private audienceOf(tool: AgentTool): ToolAudience {
+    return tool.audience ?? 'owner';
+  }
+
+  /**
+   * A ferramenta pode ser usada por esta audiencia?
+   *
+   * O dono enxerga tudo. Uma audiencia publica so alcanca ferramentas
+   * marcadas explicitamente como `public`.
+   */
+  private permite(tool: AgentTool, audience: ToolAudience): boolean {
+    return audience === 'owner' || this.audienceOf(tool) === 'public';
+  }
+
+  /**
+   * Lista as definicoes para enviar ao Claude, filtradas pela audiencia.
+   *
+   * O padrao e `owner` para nao alterar o comportamento dos canais atuais
+   * (WhatsApp e chat web, ambos do proprio dono).
+   */
+  getDefinitions(audience: ToolAudience = 'owner'): Anthropic.Tool[] {
+    return [...this.tools.values()]
+      .filter((t) => this.permite(t, audience))
+      .map((t) => t.definition);
   }
 
   /**
@@ -40,6 +64,21 @@ export class ToolRegistryService {
     const tool = this.tools.get(name);
     if (!tool) {
       return `Ferramenta "${name}" nao encontrada.`;
+    }
+
+    // Segunda barreira de audiencia. Filtrar `getDefinitions` esconde a
+    // ferramenta do modelo, mas nao impede que ela seja chamada pelo nome —
+    // por alucinacao ou por injecao de prompt vinda de uma mensagem externa.
+    // A decisao de autorizacao tem que morar aqui, junto da execucao.
+    const audience = context?.audience ?? 'owner';
+    if (!this.permite(tool, audience)) {
+      this.logger.warn(
+        `Tool ${name} negada para audiencia "${audience}" (contato ${context?.contact ?? '—'}).`,
+      );
+      const recusa = `Ferramenta "${name}" nao esta disponivel nesta conversa.`;
+      // Tentativa negada tambem e auditada: e sinal de abuso ou de injecao.
+      await this.logOperation(name, input, recusa, false, context);
+      return recusa;
     }
 
     let result: string;

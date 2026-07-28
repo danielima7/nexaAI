@@ -8,6 +8,7 @@ import { AsaasModule } from './integrations/asaas/asaas.module';
 import { GoogleModule } from './integrations/google/google.module';
 import { PagarmeModule } from './integrations/pagarme/pagarme.module';
 import { PluggyModule } from './integrations/pluggy/pluggy.module';
+import { InstagramModule } from './integrations/instagram/instagram.module';
 import { ChatModule } from './chat/chat.module';
 import { AiModule } from './ai/ai.module';
 import { ToolsModule } from './tools/tools.module';
@@ -40,6 +41,7 @@ import { ConnectionsModule } from './connections/connections.module';
     GoogleModule,
     PagarmeModule,
     PluggyModule,
+    InstagramModule,
     ChatModule,
   ],
 })
