@@ -44,6 +44,26 @@ model Connection {
   @@unique([organizationId, provider])
 }
 
+/// Preferencia de resumo diario proativo de uma organizacao.
+///
+/// O Kyrius envia o resumo sozinho no horario configurado, sem o dono
+/// precisar perguntar — e o que transforma o produto de "ferramenta que
+/// respondo quando lembro" em "assistente que trabalha".
+model ReportSchedule {
+  id             String    @id @default(uuid())
+  organizationId String    @unique
+  enabled        Boolean   @default(true)
+  /// Horario local (America/Sao_Paulo) em que o resumo deve sair.
+  hour           Int       @default(8)
+  minute         Int       @default(0)
+  /// Instrucao opcional do dono sobre o que destacar no resumo.
+  focus          String?
+  /// Ultimo envio bem-sucedido — garante um envio por dia mesmo com restart.
+  lastSentAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
 /// Uma mensagem trocada com um contato (historico de conversa persistente).
 model Message {
   id             String   @id @default(uuid())
