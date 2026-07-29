@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { WhatsappModule } from './integrations/whatsapp/whatsapp.module';
 import { HubspotModule } from './integrations/hubspot/hubspot.module';
 import { StripeModule } from './integrations/stripe/stripe.module';
@@ -15,6 +16,7 @@ import { ToolsModule } from './tools/tools.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { TenantModule } from './tenant/tenant.module';
 import { ConnectionsModule } from './connections/connections.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { ConnectionsModule } from './connections/connections.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    // Agendador (usado pelo resumo diario proativo)
+    ScheduleModule.forRoot(),
     // Banco de dados (Prisma / PostgreSQL) — global
     PrismaModule,
     // Multi-tenant (organizacoes e usuarios) — global
@@ -43,6 +47,8 @@ import { ConnectionsModule } from './connections/connections.module';
     PluggyModule,
     InstagramModule,
     ChatModule,
+    // Resumo diario proativo (depende de AiModule + WhatsappModule)
+    ReportsModule,
   ],
 })
 export class AppModule {}

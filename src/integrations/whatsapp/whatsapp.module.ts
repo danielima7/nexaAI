@@ -13,5 +13,7 @@ import { AiModule } from '../../ai/ai.module';
   imports: [AiModule],
   controllers: [WhatsappController],
   providers: [WhatsappService],
+  // Exportado para o resumo diario poder enviar mensagens proativas.
+  exports: [WhatsappService],
 })
 export class WhatsappModule {}
