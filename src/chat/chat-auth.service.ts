@@ -2,21 +2,19 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHmac, timingSafeEqual, randomBytes } from 'crypto';
 
+/** Identidade extraida de um token de sessao valido. */
+export interface SessaoChat {
+  organizationId: string;
+  userId: string;
+}
+
 /**
- * Autenticacao do Chat Web.
+ * Sessoes do Chat Web.
  *
- * O /chat era publico: qualquer pessoa com a URL abria a pagina, ganhava uma
- * organizacao e conversava com a IA — consumindo credito da Anthropic e,
- * antes da correcao do fallback, alcancando credenciais do dono.
- *
- * Modelo atual (proporcional ao estagio do produto): uma senha unica de
- * instalacao (`CHAT_ACCESS_PASSWORD`) que autentica o DONO. Ao acertar a senha,
- * o servidor emite um token assinado (HMAC-SHA256) que carrega a organizacao.
- *
- * LIMITACAO CONHECIDA: e uma senha so, para uma organizacao so. Quando existir
- * mais de um cliente usando o chat, isto precisa virar login por usuario
- * (senha com hash no banco, por organizacao). O desenho ja aponta para la: a
- * organizacao vem do TOKEN, nao do navegador.
+ * O acesso e por CONTA (e-mail + senha, ver ChatAccountService), nao mais por
+ * uma senha unica de instalacao. Ao autenticar, emitimos um token assinado
+ * (HMAC-SHA256) que carrega a organizacao e o usuario — assim a identidade vem
+ * do servidor, nunca de um identificador escolhido pelo navegador.
  */
 @Injectable()
 export class ChatAuthService implements OnModuleInit {
@@ -25,14 +23,14 @@ export class ChatAuthService implements OnModuleInit {
   /** Validade do token de sessao. */
   private static readonly VALIDADE_HORAS = 12;
 
-  /** Limite de tentativas de senha por origem, e a janela em minutos. */
+  /** Limite de tentativas de login por origem, e a janela em minutos. */
   private static readonly MAX_TENTATIVAS = 8;
   private static readonly JANELA_MINUTOS = 15;
 
   /**
    * Tentativas de login por IP. Em memoria de proposito: e um freio contra
-   * forca bruta caseira, nao um rate limit distribuido. Se um dia houver mais
-   * de uma instancia, isto precisa ir para o Redis.
+   * forca bruta caseira, nao um rate limit distribuido. Com mais de uma
+   * instancia, isto precisa ir para o Redis.
    */
   private readonly tentativas = new Map<
     string,
@@ -45,12 +43,6 @@ export class ChatAuthService implements OnModuleInit {
   constructor(private readonly config: ConfigService) {}
 
   onModuleInit(): void {
-    if (!this.senhaConfigurada()) {
-      this.logger.warn(
-        'CHAT_ACCESS_PASSWORD nao configurada: o Chat Web esta BLOQUEADO. ' +
-          'Defina a variavel no .env para liberar o acesso.',
-      );
-    }
     if (!this.config.get<string>('CHAT_SESSION_SECRET')?.trim()) {
       this.logger.warn(
         'CHAT_SESSION_SECRET ausente: usando um segredo volatil. As sessoes do ' +
@@ -59,15 +51,10 @@ export class ChatAuthService implements OnModuleInit {
     }
   }
 
-  /** Ha senha de acesso definida? Sem ela o chat nao abre (fail-closed). */
-  senhaConfigurada(): boolean {
-    return !!this.config.get<string>('CHAT_ACCESS_PASSWORD')?.trim();
-  }
-
   /**
-   * Segredo usado para assinar os tokens. Se o .env nao trouxer um, geramos
-   * um aleatorio em memoria: o chat continua funcionando, mas as sessoes
-   * morrem no proximo restart — degradacao visivel, nunca insegura.
+   * Segredo usado para assinar os tokens. Sem um no .env, geramos um aleatorio
+   * em memoria: o chat continua funcionando, mas as sessoes morrem no proximo
+   * restart — degradacao visivel, nunca insegura.
    */
   private segredo(): Buffer {
     const doEnv = this.config.get<string>('CHAT_SESSION_SECRET')?.trim();
@@ -78,12 +65,8 @@ export class ChatAuthService implements OnModuleInit {
 
   /** Comparacao de strings resistente a ataque de tempo. */
   private iguais(a: string, b: string): boolean {
-    const bufA = Buffer.from(a, 'utf8');
-    const bufB = Buffer.from(b, 'utf8');
-    // timingSafeEqual exige mesmo tamanho; comparar o tamanho antes ja vaza
-    // pouca informacao (o comprimento da senha), entao normalizamos por hash.
-    const hashA = createHmac('sha256', 'cmp').update(bufA).digest();
-    const hashB = createHmac('sha256', 'cmp').update(bufB).digest();
+    const hashA = createHmac('sha256', 'cmp').update(a, 'utf8').digest();
+    const hashB = createHmac('sha256', 'cmp').update(b, 'utf8').digest();
     return timingSafeEqual(hashA, hashB);
   }
 
@@ -119,17 +102,11 @@ export class ChatAuthService implements OnModuleInit {
     this.tentativas.delete(origem);
   }
 
-  /** A senha informada confere? */
-  verificarSenha(senha?: string): boolean {
-    const esperada = this.config.get<string>('CHAT_ACCESS_PASSWORD')?.trim();
-    if (!esperada || !senha) return false;
-    return this.iguais(senha, esperada);
-  }
-
-  /** Emite um token de sessao assinado, carregando a organizacao. */
-  emitirToken(organizationId: string): string {
+  /** Emite um token de sessao assinado, carregando organizacao e usuario. */
+  emitirToken(sessao: SessaoChat): string {
     const payload = {
-      org: organizationId,
+      org: sessao.organizationId,
+      uid: sessao.userId,
       exp: Date.now() + ChatAuthService.VALIDADE_HORAS * 3_600_000,
     };
     const corpo = Buffer.from(JSON.stringify(payload), 'utf8').toString(
@@ -142,10 +119,10 @@ export class ChatAuthService implements OnModuleInit {
   }
 
   /**
-   * Valida o token e devolve a organizacao. `undefined` se invalido,
-   * adulterado ou expirado.
+   * Valida o token e devolve organizacao + usuario.
+   * `undefined` se invalido, adulterado ou expirado.
    */
-  validarToken(token?: string): string | undefined {
+  validarToken(token?: string): SessaoChat | undefined {
     if (!token) return undefined;
 
     const [corpo, assinatura] = token.split('.');
@@ -166,7 +143,10 @@ export class ChatAuthService implements OnModuleInit {
       if (typeof payload?.exp !== 'number' || Date.now() > payload.exp) {
         return undefined;
       }
-      return typeof payload.org === 'string' ? payload.org : undefined;
+      if (typeof payload.org !== 'string' || typeof payload.uid !== 'string') {
+        return undefined;
+      }
+      return { organizationId: payload.org, userId: payload.uid };
     } catch {
       return undefined;
     }

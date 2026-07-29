@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ChatController } from './chat.controller';
 import { ChatAuthService } from './chat-auth.service';
+import { ChatAccountService } from './chat-account.service';
 import { AiModule } from '../ai/ai.module';
 
 /**
@@ -10,6 +11,7 @@ import { AiModule } from '../ai/ai.module';
 @Module({
   imports: [AiModule],
   controllers: [ChatController],
-  providers: [ChatAuthService],
+  providers: [ChatAuthService, ChatAccountService],
+  exports: [ChatAccountService],
 })
 export class ChatModule {}

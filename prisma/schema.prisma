@@ -25,7 +25,13 @@ model User {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
   name           String?
-  whatsappPhone  String   @unique
+  /// Numero de WhatsApp. Opcional: quem entra so pelo Chat Web nao tem um.
+  whatsappPhone  String?  @unique
+  /// Login do Chat Web. Opcional: quem so usa WhatsApp nao tem e-mail cadastrado.
+  email          String?  @unique
+  /// Hash da senha do Chat Web (scrypt). Nunca guardar a senha em claro.
+  passwordHash   String?
+  lastLoginAt    DateTime?
   createdAt      DateTime @default(now())
 
   @@index([organizationId])
