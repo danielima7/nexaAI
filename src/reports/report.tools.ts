@@ -30,13 +30,20 @@ export class ReportTools implements OnModuleInit {
     hour: number;
     minute: number;
     focus: string | null;
+    channel: string;
+    emailTo: string | null;
     lastSentAt: Date | null;
   }): string {
     const horario = this.agenda.formatarHorario(schedule.hour, schedule.minute);
+    const porOnde =
+      schedule.channel === 'whatsapp'
+        ? 'por WhatsApp'
+        : `por e-mail${schedule.emailTo ? ` para ${schedule.emailTo}` : ''}`;
+
     const linhas = [
       schedule.enabled
-        ? `Resumo diario ATIVO, todo dia as ${horario}.`
-        : `Resumo diario DESATIVADO (estava marcado para ${horario}).`,
+        ? `Resumo diario ATIVO, todo dia as ${horario}, ${porOnde}.`
+        : `Resumo diario DESATIVADO (estava marcado para ${horario}, ${porOnde}).`,
     ];
     if (schedule.focus) linhas.push(`Foco pedido: ${schedule.focus}`);
     if (schedule.lastSentAt) {
@@ -91,6 +98,17 @@ export class ReportTools implements OnModuleInit {
               description:
                 'O que o usuario quer que o resumo destaque, ex: "inadimplentes e boletos". Envie string vazia para remover o foco.',
             },
+            canal: {
+              type: 'string',
+              enum: ['email', 'whatsapp'],
+              description:
+                'Por onde entregar o resumo. Padrao "email" (usa a conta Google conectada). "whatsapp" exige numero ativo.',
+            },
+            email: {
+              type: 'string',
+              description:
+                'E-mail de destino, se diferente do e-mail da conta de acesso.',
+            },
           },
         },
       },
@@ -102,9 +120,19 @@ export class ReportTools implements OnModuleInit {
           hour?: number;
           minute?: number;
           focus?: string | null;
+          channel?: string;
+          emailTo?: string | null;
         } = {};
 
         if (typeof input?.ativar === 'boolean') dados.enabled = input.ativar;
+
+        if (input?.canal === 'email' || input?.canal === 'whatsapp') {
+          dados.channel = input.canal;
+        }
+
+        if (typeof input?.email === 'string') {
+          dados.emailTo = input.email.trim() || null;
+        }
 
         if (input?.horario) {
           const horario = this.agenda.interpretarHorario(input.horario);

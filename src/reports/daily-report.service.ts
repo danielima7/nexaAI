@@ -3,8 +3,21 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
 import { ConversationMemoryService } from '../ai/conversation-memory.service';
+import { ConnectionsService } from '../connections/connections.service';
 import { WhatsappService } from '../integrations/whatsapp/whatsapp.service';
+import { GoogleService } from '../integrations/google/google.service';
 import { ReportScheduleService } from './report-schedule.service';
+
+/** Canais por onde o resumo pode sair. */
+export type CanalResumo = 'email' | 'whatsapp';
+
+/** O minimo que o servico precisa saber para entregar um resumo. */
+export interface DestinoResumo {
+  organizationId: string;
+  channel: string;
+  focus?: string | null;
+  emailTo?: string | null;
+}
 
 /**
  * Resumo diario proativo: o Kyrius manda o panorama do negocio sozinho, no
@@ -15,10 +28,11 @@ import { ReportScheduleService } from './report-schedule.service';
  * que cada cliente conectou (quem so tem Asaas ouve sobre cobrancas; quem tem
  * Instagram ouve sobre seguidores) sem um `if` por integracao.
  *
- * ⚠️ LIMITE DA META (nao resolvido aqui): fora da janela de 24h desde a ultima
- * mensagem do usuario, a Meta so aceita *template aprovado* — texto livre e
- * recusado. Em dev, e para quem falou com o bot nas ultimas 24h, funciona.
- * Para producao isto vai exigir um template de mensagem aprovado.
+ * ENTREGA PLUGAVEL. A geracao e agnostica de canal; so o transporte muda:
+ *  - `email` (padrao): usa a conta Google que a organizacao ja autorizou para
+ *    as planilhas. Nao depende de aprovacao de plataforma nenhuma.
+ *  - `whatsapp`: exige numero ativo e, fora da janela de 24h, template
+ *    aprovado pela Meta. Indisponivel enquanto a conta estiver banida.
  */
 @Injectable()
 export class DailyReportService {
@@ -39,7 +53,9 @@ export class DailyReportService {
     private readonly agenda: ReportScheduleService,
     private readonly ai: AiService,
     private readonly memory: ConversationMemoryService,
+    private readonly connections: ConnectionsService,
     private readonly whatsapp: WhatsappService,
+    private readonly google: GoogleService,
   ) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
@@ -61,7 +77,6 @@ export class DailyReportService {
     const minutosAgora = agora.hora * 60 + agora.minuto;
 
     for (const schedule of await this.agenda.listarAtivas()) {
-      // Ja enviamos hoje?
       if (this.agenda.mesmoDiaLocal(schedule.lastSentAt, agora.dia)) continue;
 
       const minutosAlvo = schedule.hour * 60 + schedule.minute;
@@ -69,7 +84,7 @@ export class DailyReportService {
       if (atraso < 0 || atraso > DailyReportService.ATRASO_MAXIMO_MIN) continue;
 
       try {
-        await this.enviarPara(schedule.organizationId, schedule.focus);
+        await this.enviarPara(schedule);
         await this.agenda.registrarEnvio(schedule.organizationId);
       } catch (e: any) {
         // Falha de uma organizacao nao pode derrubar as outras. Nao marcamos
@@ -82,37 +97,103 @@ export class DailyReportService {
   }
 
   /**
-   * Gera e envia o resumo de uma organizacao. Publico para permitir disparo
+   * Gera e entrega o resumo de uma organizacao. Publico para permitir disparo
    * manual (util para testar sem esperar o horario).
    */
-  async enviarPara(organizationId: string, focus?: string | null): Promise<string> {
-    const destinatario = await this.destinatario(organizationId);
-    if (!destinatario) {
+  async enviarPara(destino: DestinoResumo): Promise<string> {
+    const canal: CanalResumo =
+      destino.channel === 'whatsapp' ? 'whatsapp' : 'email';
+
+    return canal === 'whatsapp'
+      ? this.enviarPorWhatsapp(destino)
+      : this.enviarPorEmail(destino);
+  }
+
+  // ---------- Entrega por e-mail (padrao) ----------
+
+  private async enviarPorEmail(destino: DestinoResumo): Promise<string> {
+    const para = destino.emailTo?.trim() || (await this.emailDaOrganizacao(destino.organizationId));
+    if (!para) {
+      throw new Error(
+        'Nenhum e-mail de destino: a organizacao nao tem conta de acesso nem e-mail configurado.',
+      );
+    }
+
+    // O envio usa a conta Google que a organizacao ja autorizou (a mesma das
+    // planilhas), entao o e-mail sai dela para ela — sem provedor externo.
+    const refreshToken = await this.connections.resolveToken(
+      { organizationId: destino.organizationId },
+      'google',
+      'GOOGLE_REFRESH_TOKEN',
+    );
+    if (!refreshToken) {
+      throw new Error(
+        'O Google nao esta conectado para esta organizacao — necessario para enviar o resumo por e-mail.',
+      );
+    }
+
+    const texto = await this.gerar(destino, `email:${para}`);
+    const hoje = new Date().toLocaleDateString('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+    });
+
+    await this.google.sendEmail(
+      refreshToken,
+      para,
+      `Kyrius — resumo de ${hoje}`,
+      texto,
+    );
+
+    this.logger.log(
+      `Resumo diario enviado por e-mail para ${para} (organizacao ${destino.organizationId}).`,
+    );
+    return texto;
+  }
+
+  /** E-mail da primeira conta de acesso da organizacao. */
+  private async emailDaOrganizacao(
+    organizationId: string,
+  ): Promise<string | undefined> {
+    const usuarios = await this.prisma.user.findMany({
+      where: { organizationId },
+      orderBy: { createdAt: 'asc' },
+    });
+    return usuarios.find((u) => !!u.email)?.email ?? undefined;
+  }
+
+  // ---------- Entrega por WhatsApp ----------
+
+  private async enviarPorWhatsapp(destino: DestinoResumo): Promise<string> {
+    const usuario = await this.destinatarioWhatsapp(destino.organizationId);
+    if (!usuario) {
       throw new Error(
         'Nenhum usuario com numero de WhatsApp encontrado para esta organizacao.',
       );
     }
 
-    const texto = await this.gerar(organizationId, destinatario, focus);
-    await this.whatsapp.sendTextMessage(destinatario.whatsappPhone, texto);
+    const texto = await this.gerar(destino, usuario.whatsappPhone, usuario.id);
+    await this.whatsapp.sendTextMessage(usuario.whatsappPhone, texto);
 
-    // Guarda no historico para o dono poder responder ("me detalha o item 2")
-    // e a IA ter contexto. So a resposta entra — a instrucao interna nao.
+    // So o WhatsApp guarda o resumo no historico: ali existe continuidade de
+    // conversa, e o dono pode responder "me detalha o item 2". No e-mail nao ha
+    // conversa para continuar.
     await this.memory.append(
-      destinatario.whatsappPhone,
+      usuario.whatsappPhone,
       { role: 'assistant', content: texto },
-      { organizationId, userId: destinatario.id },
+      { organizationId: destino.organizationId, userId: usuario.id },
     );
 
-    this.logger.log(`Resumo diario enviado para a organizacao ${organizationId}.`);
+    this.logger.log(
+      `Resumo diario enviado por WhatsApp (organizacao ${destino.organizationId}).`,
+    );
     return texto;
   }
 
   /**
    * Primeiro usuario da organizacao com numero real de WhatsApp.
-   * Sessoes do chat web (`web:*`) e usuarios tecnicos nao recebem resumo.
+   * `whatsappPhone` e opcional desde que o Chat Web ganhou login proprio.
    */
-  private async destinatario(
+  private async destinatarioWhatsapp(
     organizationId: string,
   ): Promise<{ id: string; whatsappPhone: string } | undefined> {
     const usuarios = await this.prisma.user.findMany({
@@ -120,8 +201,6 @@ export class DailyReportService {
       orderBy: { createdAt: 'asc' },
     });
 
-    // `whatsappPhone` e opcional desde que o Chat Web ganhou login proprio:
-    // quem entra so pelo chat nao tem numero, e nao recebe resumo por WhatsApp.
     const comNumero = usuarios.find(
       (u) => !!u.whatsappPhone && /^\d{10,15}$/.test(u.whatsappPhone),
     );
@@ -131,14 +210,16 @@ export class DailyReportService {
       : undefined;
   }
 
+  // ---------- Geracao (agnostica de canal) ----------
+
   /** Pede o resumo a IA, com as ferramentas da organizacao disponiveis. */
   private async gerar(
-    organizationId: string,
-    destinatario: { id: string; whatsappPhone: string },
-    focus?: string | null,
+    destino: DestinoResumo,
+    contact: string,
+    userId?: string,
   ): Promise<string> {
     const instrucao = [
-      'Monte o resumo diario do negocio para o dono, que vai ler no WhatsApp.',
+      'Monte o resumo diario do negocio para o dono.',
       'Consulte as integracoes conectadas e traga o que mudou: dinheiro que entrou',
       'nas ultimas 24h, cobrancas que vencem hoje, clientes inadimplentes,',
       'compromissos da agenda e desempenho das redes sociais.',
@@ -147,15 +228,15 @@ export class DailyReportService {
       'sem mencionar o que faltou.',
       'Comece com uma saudacao curta. Seja objetivo: numeros primeiro, listas',
       'curtas, sem enrolacao. Se nao houver nada relevante, diga isso em uma linha.',
-      focus ? `O dono pediu atencao especial a: ${focus}.` : '',
+      destino.focus ? `O dono pediu atencao especial a: ${destino.focus}.` : '',
     ]
       .filter(Boolean)
       .join(' ');
 
     return this.ai.generateReply([{ role: 'user', content: instrucao }], {
-      contact: destinatario.whatsappPhone,
-      organizationId,
-      userId: destinatario.id,
+      contact,
+      organizationId: destino.organizationId,
+      userId,
       audience: 'owner',
     });
   }

@@ -78,6 +78,8 @@ export class ReportScheduleService {
       hour?: number;
       minute?: number;
       focus?: string | null;
+      channel?: string;
+      emailTo?: string | null;
     },
   ) {
     return this.prisma.reportSchedule.upsert({

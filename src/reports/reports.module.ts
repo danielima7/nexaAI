@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AiModule } from '../ai/ai.module';
 import { WhatsappModule } from '../integrations/whatsapp/whatsapp.module';
+import { GoogleModule } from '../integrations/google/google.module';
 import { ReportScheduleService } from './report-schedule.service';
 import { DailyReportService } from './daily-report.service';
 import { ReportTools } from './report.tools';
@@ -13,7 +14,7 @@ import { ReportTools } from './report.tools';
  * em si vem do ScheduleModule, registrado uma unica vez no AppModule.
  */
 @Module({
-  imports: [AiModule, WhatsappModule],
+  imports: [AiModule, WhatsappModule, GoogleModule],
   providers: [ReportScheduleService, DailyReportService, ReportTools],
   exports: [DailyReportService, ReportScheduleService],
 })

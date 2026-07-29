@@ -80,6 +80,11 @@ model ReportSchedule {
   id             String    @id @default(uuid())
   organizationId String    @unique
   enabled        Boolean   @default(true)
+  /// Por onde o resumo e entregue: "email" ou "whatsapp".
+  /// Padrao e-mail: nao depende de aprovacao de plataforma nenhuma.
+  channel        String    @default("email")
+  /// Destino do e-mail. Vazio = e-mail da conta de acesso da organizacao.
+  emailTo        String?
   /// Horario local (America/Sao_Paulo) em que o resumo deve sair.
   hour           Int       @default(8)
   minute         Int       @default(0)
