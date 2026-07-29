@@ -112,12 +112,23 @@ export class DailyReportService {
    * Primeiro usuario da organizacao com numero real de WhatsApp.
    * Sessoes do chat web (`web:*`) e usuarios tecnicos nao recebem resumo.
    */
-  private async destinatario(organizationId: string) {
+  private async destinatario(
+    organizationId: string,
+  ): Promise<{ id: string; whatsappPhone: string } | undefined> {
     const usuarios = await this.prisma.user.findMany({
       where: { organizationId },
       orderBy: { createdAt: 'asc' },
     });
-    return usuarios.find((u) => /^\d{10,15}$/.test(u.whatsappPhone));
+
+    // `whatsappPhone` e opcional desde que o Chat Web ganhou login proprio:
+    // quem entra so pelo chat nao tem numero, e nao recebe resumo por WhatsApp.
+    const comNumero = usuarios.find(
+      (u) => !!u.whatsappPhone && /^\d{10,15}$/.test(u.whatsappPhone),
+    );
+
+    return comNumero?.whatsappPhone
+      ? { id: comNumero.id, whatsappPhone: comNumero.whatsappPhone }
+      : undefined;
   }
 
   /** Pede o resumo a IA, com as ferramentas da organizacao disponiveis. */

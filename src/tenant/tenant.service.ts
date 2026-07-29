@@ -43,46 +43,4 @@ export class TenantService {
     return { user, organization };
   }
 
-  /**
-   * Resolve o tenant a partir de uma organizacao JA CONHECIDA — usado pelo
-   * Chat Web autenticado, onde a organizacao vem do token de sessao e nao de
-   * um identificador escolhido pelo navegador.
-   *
-   * Diferenca importante para `resolveByWhatsapp`: aqui NAO se cria
-   * organizacao. Se o id nao existir, devolve `null` — token valido apontando
-   * para organizacao inexistente e erro, nao motivo para provisionar um tenant.
-   */
-  async resolveByOrganization(
-    organizationId: string,
-  ): Promise<{ user: User; organization: Organization } | null> {
-    const organization = await this.prisma.organization.findUnique({
-      where: { id: organizationId },
-    });
-    if (!organization) {
-      this.logger.warn(
-        `Organizacao ${organizationId} nao encontrada ao resolver o tenant do chat.`,
-      );
-      return null;
-    }
-
-    const existing = await this.prisma.user.findFirst({
-      where: { organizationId },
-      orderBy: { createdAt: 'asc' },
-    });
-    if (existing) return { user: existing, organization };
-
-    // Organizacao sem nenhum usuario: cria um usuario tecnico para que as
-    // mensagens e os logs de operacao tenham a quem ser atribuidos.
-    const user = await this.prisma.user.create({
-      data: {
-        organizationId,
-        name: 'Usuario do Chat Web',
-        whatsappPhone: `web-owner:${organizationId}`,
-      },
-    });
-    this.logger.log(
-      `Usuario tecnico criado para a organizacao ${organizationId}: ${user.id}`,
-    );
-    return { user, organization };
-  }
 }
