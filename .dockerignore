@@ -1,0 +1,22 @@
+# Nunca entram na imagem: segredos, dependencias e artefatos locais.
+.env
+.env.*
+!.env.example
+
+node_modules
+dist
+build
+
+.git
+.gitignore
+
+# Backups do banco ficam fora da imagem — eles vivem em volume/armazenamento.
+backups
+
+*.log
+npm-debug.log*
+
+.vscode
+.idea
+.DS_Store
+Thumbs.db

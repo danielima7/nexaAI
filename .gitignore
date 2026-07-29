@@ -25,3 +25,6 @@ npm-debug.log*
 
 # Documento de referencia interno (mapeia onde ficam os segredos)
 KYRIUS-REFERENCIA.md
+
+# Backups do banco (contem dados de clientes)
+backups/
