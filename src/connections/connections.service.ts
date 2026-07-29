@@ -156,6 +156,20 @@ export class ConnectionsService implements OnModuleInit {
     });
   }
 
+  /**
+   * Remove a conexao de um provedor. O cliente pode revogar o acesso quando
+   * quiser — usa `deleteMany` para ser idempotente (desconectar duas vezes
+   * nao e erro).
+   */
+  async remover(organizationId: string, provider: string): Promise<void> {
+    await this.prisma.connection.deleteMany({
+      where: { organizationId, provider },
+    });
+    this.logger.log(
+      `Conexao "${provider}" removida da organizacao ${organizationId}.`,
+    );
+  }
+
   /** Lista os provedores conectados por uma organizacao. */
   async listProviders(organizationId: string): Promise<string[]> {
     const rows = await this.prisma.connection.findMany({

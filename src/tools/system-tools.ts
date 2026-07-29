@@ -1,7 +1,9 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ToolRegistryService } from './tool-registry.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConnectionsService } from '../connections/connections.service';
+import { PROVEDORES } from '../connections/provider-catalog';
 
 /**
  * Ferramentas "de sistema" do proprio Kyrius (nao ligadas a uma integracao
@@ -11,53 +13,71 @@ import { ConnectionsService } from '../connections/connections.service';
 export class SystemTools implements OnModuleInit {
   private readonly logger = new Logger(SystemTools.name);
 
-  /** Provedores que ja usam credencial por organizacao (Fase 2). */
-  private static readonly PROVEDORES_CONECTAVEIS = [
-    'hubspot',
-    'stripe',
-    'mercadopago',
-    'asaas',
-    'pagarme',
-  ];
-
   constructor(
     private readonly registry: ToolRegistryService,
     private readonly prisma: PrismaService,
     private readonly connections: ConnectionsService,
+    private readonly config: ConfigService,
   ) {}
+
+  /** Link da tela onde o cliente conecta as proprias contas. */
+  private linkIntegracoes(): string {
+    const base = (
+      this.config.get<string>('PUBLIC_BASE_URL') ?? 'http://localhost:3000'
+    ).replace(/\/+$/, '');
+    return `${base}/integracoes`;
+  }
 
   onModuleInit(): void {
     this.registry.register({
       definition: {
         name: 'kyrius_conectar_integracao',
         description:
-          'Conecta uma integracao para a organizacao do usuario, salvando a credencial (token/chave de API). Use quando o usuario pedir para conectar/configurar uma integracao informando um token. Provedores suportados no momento: hubspot.',
+          'Devolve o link da pagina segura onde o usuario conecta as proprias integracoes (HubSpot, Stripe, Asaas, Mercado Pago, Pagar.me, Google, Instagram e contas bancarias). Use SEMPRE que o usuario pedir para conectar ou configurar uma integracao. NUNCA peca a chave de API ou token pela conversa — credenciais so devem ser informadas nessa pagina.',
         input_schema: {
           type: 'object',
           properties: {
             provedor: {
               type: 'string',
-              description: 'Nome do provedor (ex: hubspot)',
-            },
-            token: {
-              type: 'string',
-              description: 'Token/chave de API da conta do usuario',
+              description:
+                'Opcional. Integracao que o usuario quer conectar, para orienta-lo melhor.',
             },
           },
-          required: ['provedor', 'token'],
         },
       },
       execute: async (input, context) => {
         if (!context?.organizationId)
           return 'Nao consegui identificar sua organizacao.';
-        const provider = String(input.provedor).toLowerCase();
-        if (!SystemTools.PROVEDORES_CONECTAVEIS.includes(provider)) {
-          return `Conexao do provedor "${input.provedor}" ainda nao esta disponivel. Disponiveis: ${SystemTools.PROVEDORES_CONECTAVEIS.join(', ')}.`;
+
+        const pedido = String(input?.provedor ?? '')
+          .toLowerCase()
+          .trim();
+        const provedor = pedido
+          ? PROVEDORES.find(
+              (p) => p.id === pedido || p.nome.toLowerCase().includes(pedido),
+            )
+          : undefined;
+
+        const linhas = [
+          'Para conectar com seguranca, abra esta pagina e faca a conexao por la:',
+          this.linkIntegracoes(),
+        ];
+
+        if (pedido && provedor) {
+          linhas.push('', `Sobre ${provedor.nome}: ${provedor.ajuda}`);
+        } else if (pedido && !provedor) {
+          linhas.push(
+            '',
+            `Ainda nao ha integracao com "${input.provedor}". Disponiveis: ${PROVEDORES.map((p) => p.nome).join(', ')}.`,
+          );
         }
-        await this.connections.set(context.organizationId, provider, {
-          token: input.token,
-        });
-        return `Integracao ${provider} conectada com sucesso para a sua organizacao. ✅`;
+
+        linhas.push(
+          '',
+          'Importante: nunca envie chaves de API ou senhas por aqui — a conversa fica salva. Use sempre a pagina.',
+        );
+
+        return linhas.join('\n');
       },
     });
 
@@ -74,9 +94,21 @@ export class SystemTools implements OnModuleInit {
         const providers = await this.connections.listProviders(
           context.organizationId,
         );
-        if (providers.length === 0)
-          return 'Sua organizacao ainda nao conectou nenhuma integracao com credencial propria.';
-        return `Integracoes conectadas pela sua organizacao: ${providers.join(', ')}.`;
+        const nomes = providers.map(
+          (id) => PROVEDORES.find((p) => p.id === id)?.nome ?? id,
+        );
+
+        if (nomes.length === 0) {
+          return [
+            'Sua organizacao ainda nao conectou nenhuma integracao.',
+            `Voce pode conectar em: ${this.linkIntegracoes()}`,
+          ].join('\n');
+        }
+
+        return [
+          `Integracoes conectadas: ${nomes.join(', ')}.`,
+          `Para conectar outras ou trocar credenciais: ${this.linkIntegracoes()}`,
+        ].join('\n');
       },
     });
 

@@ -163,7 +163,8 @@ export class ChatController {
   header .logo { width:32px; height:32px; border-radius:8px; background:var(--accent); display:flex; align-items:center; justify-content:center; font-weight:700; }
   header h1 { font-size:18px; margin:0; }
   header small { color:var(--muted); font-weight:400; }
-  header .sair { margin-left:auto; background:none; border:1px solid #374151; color:var(--muted); padding:6px 12px; border-radius:8px; font-size:13px; cursor:pointer; }
+  header .acoes { margin-left:auto; display:flex; gap:8px; align-items:center; }
+  header .sair, header .integracoes { background:none; border:1px solid #374151; color:var(--muted); padding:6px 12px; border-radius:8px; font-size:13px; cursor:pointer; text-decoration:none; display:inline-block; }
   #messages { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:12px; max-width:820px; width:100%; margin:0 auto; }
   .msg { padding:10px 14px; border-radius:14px; max-width:78%; white-space:pre-wrap; line-height:1.4; }
   .me { align-self:flex-end; background:var(--me); color:#fff; border-bottom-right-radius:4px; }
@@ -201,7 +202,10 @@ export class ChatController {
   <header class="oculto" id="cabecalho">
     <div class="logo">K</div>
     <div><h1>Kyrius <small id="quem">· assistente</small></h1></div>
-    <button class="sair" id="sair">Sair</button>
+    <div class="acoes">
+      <a class="integracoes" href="/integracoes">Integracoes</a>
+      <button class="sair" id="sair">Sair</button>
+    </div>
   </header>
   <div id="messages" class="oculto"></div>
   <form id="form" class="oculto">

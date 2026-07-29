@@ -50,6 +50,27 @@ model Connection {
   @@unique([organizationId, provider])
 }
 
+/// Convite de acesso ao Chat Web.
+///
+/// O cliente define a PROPRIA senha ao aceitar — assim ninguem precisa
+/// manusear a credencial de outra pessoa. O token vai no link; no banco fica
+/// apenas o hash, entao vazar a tabela nao entrega nenhum convite valido.
+model Invite {
+  id             String    @id @default(uuid())
+  /// SHA-256 do token enviado no link.
+  tokenHash      String    @unique
+  email          String
+  /// Organizacao de destino. Null = criar uma nova ao aceitar.
+  organizationId String?
+  /// Nome da empresa, usado quando o convite cria a organizacao.
+  companyName    String?
+  expiresAt      DateTime
+  usedAt         DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([email])
+}
+
 /// Preferencia de resumo diario proativo de uma organizacao.
 ///
 /// O Kyrius envia o resumo sozinho no horario configurado, sem o dono
