@@ -17,6 +17,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { TenantModule } from './tenant/tenant.module';
 import { ConnectionsModule } from './connections/connections.module';
 import { ReportsModule } from './reports/reports.module';
+import { HealthController } from './health/health.controller';
 
 @Module({
   imports: [
@@ -50,5 +51,6 @@ import { ReportsModule } from './reports/reports.module';
     // Resumo diario proativo (depende de AiModule + WhatsappModule)
     ReportsModule,
   ],
+  controllers: [HealthController],
 })
 export class AppModule {}
