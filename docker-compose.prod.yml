@@ -1,0 +1,47 @@
+# Kyrius em producao: aplicacao + banco, prontos para uma VPS.
+#
+# Subir:      docker compose -f docker-compose.prod.yml up -d --build
+# Migrar:     docker compose -f docker-compose.prod.yml exec app npx prisma migrate deploy
+# Logs:       docker compose -f docker-compose.prod.yml logs -f app
+#
+# O arquivo .env fica ao lado deste compose e NAO entra na imagem.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-kyrius}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+      POSTGRES_DB: ${POSTGRES_DB:-kyrius}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      # Backups gravados pelo script ficam acessiveis do host.
+      - ./backups:/backups
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-kyrius}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Sem `ports`: o banco so e alcancavel pela rede interna do compose.
+    # Expor 5432 na internet e um dos erros mais comuns e mais caros.
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      # Dentro da rede do compose o host do banco e o nome do servico.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-kyrius}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-kyrius}?schema=public
+      NODE_ENV: production
+    ports:
+      # Publique atras de um proxy reverso com TLS (Caddy, Nginx, Traefik).
+      # Trocar por "127.0.0.1:3000:3000" deixa a app acessivel apenas ao proxy.
+      - '3000:3000'
+
+volumes:
+  postgres-data:
