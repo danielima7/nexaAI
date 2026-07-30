@@ -98,6 +98,7 @@ export class PagarmeTools implements OnModuleInit {
           required: ['name'],
         },
       },
+      escrita: true,
       execute: async (input, context) => {
         const key = await this.key(context);
         if (!key) return this.naoConectado();

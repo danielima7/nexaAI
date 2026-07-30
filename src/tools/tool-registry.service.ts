@@ -16,11 +16,31 @@ export class ToolRegistryService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Registra uma ferramenta. Chamado por cada integracao na inicializacao. */
+  /**
+   * Registra uma ferramenta. Chamado por cada integracao na inicializacao.
+   *
+   * Ferramentas de escrita ganham o campo `confirmado` no schema
+   * automaticamente — assim cada integracao nao precisa lembrar de declara-lo,
+   * e o campo nunca fica com nome ou descricao divergente entre elas.
+   */
   register(tool: AgentTool): void {
+    if (tool.escrita) {
+      const schema = tool.definition.input_schema as any;
+      schema.properties = {
+        ...(schema.properties ?? {}),
+        confirmado: {
+          type: 'boolean',
+          description:
+            'Envie true APENAS depois que o usuario confirmar explicitamente esta acao. Na primeira vez, chame sem este campo para receber o que deve ser confirmado.',
+        },
+      };
+    }
+
     this.tools.set(tool.definition.name, tool);
     this.logger.log(
-      `Tool registrada: ${tool.definition.name} [${this.audienceOf(tool)}]`,
+      `Tool registrada: ${tool.definition.name} [${this.audienceOf(tool)}${
+        tool.escrita ? ', escrita' : ''
+      }]`,
     );
   }
 
@@ -79,6 +99,22 @@ export class ToolRegistryService {
       // Tentativa negada tambem e auditada: e sinal de abuso ou de injecao.
       await this.logOperation(name, input, recusa, false, context);
       return recusa;
+    }
+
+    // Acoes que criam ou alteram dados exigem confirmacao explicita do usuario.
+    // A primeira chamada nao executa nada: devolve o que precisa ser confirmado.
+    if (tool.escrita && input?.confirmado !== true) {
+      const pendente = [
+        `A ferramenta "${name}" altera dados e ainda NAO foi executada.`,
+        'Descreva ao usuario, em uma frase, exatamente o que sera feito e com quais valores,',
+        'e pergunte se pode prosseguir. Somente apos ele confirmar, chame esta ferramenta',
+        'de novo com os mesmos argumentos mais "confirmado": true.',
+        `Argumentos recebidos: ${JSON.stringify(input ?? {})}`,
+      ].join(' ');
+
+      this.logger.log(`Tool ${name} aguardando confirmacao do usuario.`);
+      await this.logOperation(name, input, pendente, true, context);
+      return pendente;
     }
 
     let result: string;

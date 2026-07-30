@@ -87,3 +87,91 @@ describe('ToolRegistryService (audiencia)', () => {
     });
   });
 });
+
+/**
+ * Confirmacao antes de escrever.
+ *
+ * Leitura errada gera resposta errada — reversivel. Escrita errada cadastra a
+ * empresa errada no CRM do cliente ou grava a linha errada na planilha de
+ * faturamento, e isso so aparece quando o dado ja contaminou o relatorio.
+ */
+describe('ToolRegistryService (confirmacao de escrita)', () => {
+  const prismaFalso = {
+    operationLog: { create: jest.fn().mockResolvedValue({}) },
+  } as unknown as PrismaService;
+
+  let registry: ToolRegistryService;
+  let executou: boolean;
+
+  const criarEmpresa: AgentTool = {
+    definition: {
+      name: 'crm_criar_empresa',
+      description: '',
+      input_schema: { type: 'object', properties: { nome: { type: 'string' } } },
+    },
+    escrita: true,
+    execute: async () => {
+      executou = true;
+      return 'empresa criada';
+    },
+  };
+
+  const consultarSaldo: AgentTool = {
+    definition: { name: 'consultar_saldo', description: '', input_schema: { type: 'object' } },
+    execute: async () => 'saldo: R$ 100',
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    executou = false;
+    registry = new ToolRegistryService(prismaFalso);
+    registry.register(criarEmpresa);
+    registry.register(consultarSaldo);
+  });
+
+  it('adiciona o campo `confirmado` ao schema da ferramenta de escrita', () => {
+    const def = registry
+      .getDefinitions('owner')
+      .find((d) => d.name === 'crm_criar_empresa');
+    expect((def!.input_schema as any).properties.confirmado).toBeDefined();
+  });
+
+  it('NAO executa na primeira chamada, sem confirmacao', async () => {
+    const r = await registry.execute('crm_criar_empresa', { nome: 'XPTO Ltda' });
+
+    expect(executou).toBe(false);
+    expect(r).toContain('NAO foi executada');
+    // A IA precisa saber o que dizer ao usuario, entao devolvemos os argumentos.
+    expect(r).toContain('XPTO Ltda');
+  });
+
+  it('executa depois de confirmado', async () => {
+    const r = await registry.execute('crm_criar_empresa', {
+      nome: 'XPTO Ltda',
+      confirmado: true,
+    });
+
+    expect(executou).toBe(true);
+    expect(r).toBe('empresa criada');
+  });
+
+  it('confirmado apenas "truthy" nao basta — exige true', async () => {
+    // Evita que uma string "false" ou 1 vindos do modelo passem por confirmacao.
+    for (const valor of ['true', 1, 'sim', {}]) {
+      executou = false;
+      await registry.execute('crm_criar_empresa', { nome: 'X', confirmado: valor });
+      expect(executou).toBe(false);
+    }
+  });
+
+  it('ferramenta de leitura executa direto, sem pedir confirmacao', async () => {
+    // Pedir confirmacao para "qual meu saldo?" so treina o usuario a dizer
+    // "sim" sem ler o que esta confirmando.
+    expect(await registry.execute('consultar_saldo', {})).toBe('saldo: R$ 100');
+  });
+
+  it('registra a pendencia na auditoria', async () => {
+    await registry.execute('crm_criar_empresa', { nome: 'X' });
+    expect(prismaFalso.operationLog.create).toHaveBeenCalled();
+  });
+});

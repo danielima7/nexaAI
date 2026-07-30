@@ -107,6 +107,7 @@ export class AsaasTools implements OnModuleInit {
           required: ['name', 'cpfCnpj'],
         },
       },
+      escrita: true,
       execute: async (input, context) => {
         const key = await this.key(context);
         if (!key) return this.naoConectado();

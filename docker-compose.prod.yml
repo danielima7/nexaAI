@@ -3,23 +3,34 @@
 # Subir:      docker compose -f docker-compose.prod.yml up -d --build
 # Migrar:     docker compose -f docker-compose.prod.yml exec app npx prisma migrate deploy
 # Logs:       docker compose -f docker-compose.prod.yml logs -f app
+# Derrubar:   docker compose -f docker-compose.prod.yml down
 #
-# O arquivo .env fica ao lado deste compose e NAO entra na imagem.
+# ⚠️ ESTE ARQUIVO NAO USA `${VARIAVEL}` DE PROPOSITO.
+#
+# O Compose interpola `${...}` lendo o `.env` da pasta — e faz isso ANTES de
+# entregar qualquer coisa ao container. Como algumas credenciais contem `$`
+# (a chave do Asaas comeca com `$aact_`), o Compose lia o trecho depois do
+# cifrao como nome de variavel, nao encontrava, e substituia por vazio: a
+# chave chegaria corrompida no container e a integracao quebraria em silencio.
+# O mesmo defeito impedia ate `docker compose down` de rodar.
+#
+# Sem interpolacao, o `env_file` entrega o arquivo ao container byte a byte.
+# Configure tudo — inclusive POSTGRES_* e DATABASE_URL — no `.env`.
 
 services:
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-kyrius}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
-      POSTGRES_DB: ${POSTGRES_DB:-kyrius}
+    # Le POSTGRES_USER, POSTGRES_PASSWORD e POSTGRES_DB direto do arquivo.
+    env_file:
+      - .env
     volumes:
       - postgres-data:/var/lib/postgresql/data
       # Backups gravados pelo script ficam acessiveis do host.
       - ./backups:/backups
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-kyrius}']
+      # `$$` escapa o cifrao para o Compose nao tentar interpolar aqui.
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -34,10 +45,6 @@ services:
         condition: service_healthy
     env_file:
       - .env
-    environment:
-      # Dentro da rede do compose o host do banco e o nome do servico.
-      DATABASE_URL: postgresql://${POSTGRES_USER:-kyrius}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-kyrius}?schema=public
-      NODE_ENV: production
     ports:
       # Publique atras de um proxy reverso com TLS (Caddy, Nginx, Traefik).
       # Trocar por "127.0.0.1:3000:3000" deixa a app acessivel apenas ao proxy.

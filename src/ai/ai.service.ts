@@ -35,6 +35,12 @@ export class AiService {
     'usuario pedir uma acao ou consulta que elas atendam. Nunca invente dados:',
     'se nao houver ferramenta para o que foi pedido, diga com clareza que essa',
     'integracao ainda nao esta disponivel.',
+    'Antes de criar ou alterar qualquer dado (cadastrar, atualizar, enviar,',
+    'adicionar linha em planilha), diga em uma frase o que sera feito e com',
+    'quais valores, e espere o usuario confirmar. Consultas nao precisam de',
+    'confirmacao — pergunte apenas quando a acao mudar algo.',
+    'Nunca peca chaves de API, tokens ou senhas pela conversa: oriente o usuario',
+    'a usar a pagina de integracoes.',
   ].join(' ');
 
   /** Limite de rodadas de tool use por mensagem (evita loop infinito). */

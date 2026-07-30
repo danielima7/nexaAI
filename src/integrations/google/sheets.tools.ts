@@ -193,6 +193,7 @@ export class SheetsTools implements OnModuleInit {
           required: ['planilha_id', 'aba', 'valores'],
         },
       },
+      escrita: true,
       execute: async (input, context) => {
         const token = await this.token(context);
         if (!token) return this.naoConectado();
@@ -233,6 +234,7 @@ export class SheetsTools implements OnModuleInit {
           required: ['planilha_id', 'intervalo', 'valores'],
         },
       },
+      escrita: true,
       execute: async (input, context) => {
         const token = await this.token(context);
         if (!token) return this.naoConectado();
@@ -265,6 +267,7 @@ export class SheetsTools implements OnModuleInit {
           required: ['titulo'],
         },
       },
+      escrita: true,
       execute: async (input, context) => {
         const token = await this.token(context);
         if (!token) return this.naoConectado();

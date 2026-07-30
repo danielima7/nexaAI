@@ -51,6 +51,24 @@ export interface AgentTool {
   audience?: ToolAudience;
 
   /**
+   * A ferramenta CRIA ou ALTERA dados em um sistema do cliente?
+   *
+   * Marcando `true`, o registry exige uma confirmacao explicita antes de
+   * executar: a primeira chamada nao roda nada e devolve uma instrucao para a
+   * IA descrever a acao ao usuario e so entao chamar de novo com
+   * `confirmado: true`.
+   *
+   * POR QUE: uma leitura errada gera uma resposta errada — chato, mas
+   * reversivel. Uma ESCRITA errada cadastra a empresa errada no CRM do cliente
+   * ou grava a linha errada na planilha de faturamento dele, e isso o cliente
+   * descobre depois, quando o dado ja contaminou o relatorio.
+   *
+   * Consultas puras devem deixar em branco: pedir confirmacao para "qual meu
+   * saldo?" so treina o usuario a dizer "sim" sem ler.
+   */
+  escrita?: boolean;
+
+  /**
    * Executa a ferramenta com os argumentos que a IA forneceu.
    * @param input argumentos ja validados pelo schema
    * @param context contexto opcional (ex: contato que originou a acao)

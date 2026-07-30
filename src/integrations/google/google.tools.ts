@@ -94,6 +94,7 @@ export class GoogleTools implements OnModuleInit {
           required: ['para', 'assunto', 'corpo'],
         },
       },
+      escrita: true,
       execute: async (input, context) => {
         const token = await this.token(context);
         if (!token) return this.naoConectado();
@@ -141,6 +142,7 @@ export class GoogleTools implements OnModuleInit {
           required: ['titulo', 'inicio', 'fim'],
         },
       },
+      escrita: true,
       execute: async (input, context) => {
         const token = await this.token(context);
         if (!token) return this.naoConectado();

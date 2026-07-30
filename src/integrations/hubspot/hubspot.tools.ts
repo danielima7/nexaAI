@@ -50,6 +50,7 @@ export class HubspotTools implements OnModuleInit {
           required: ['name'],
         },
       },
+      escrita: true,
       execute: async (input, context) => {
         const token = await this.token(context);
         if (!token) return this.naoConectado();
@@ -99,6 +100,7 @@ export class HubspotTools implements OnModuleInit {
           required: ['firstname'],
         },
       },
+      escrita: true,
       execute: async (input, context) => {
         const token = await this.token(context);
         if (!token) return this.naoConectado();
@@ -121,6 +123,7 @@ export class HubspotTools implements OnModuleInit {
           required: ['dealname'],
         },
       },
+      escrita: true,
       execute: async (input, context) => {
         const token = await this.token(context);
         if (!token) return this.naoConectado();
@@ -145,6 +148,7 @@ export class HubspotTools implements OnModuleInit {
           required: ['name'],
         },
       },
+      escrita: true,
       execute: async (input, context) => {
         const token = await this.token(context);
         if (!token) return this.naoConectado();
@@ -209,6 +213,7 @@ export class HubspotTools implements OnModuleInit {
           required: ['busca'],
         },
       },
+      escrita: true,
       execute: async (input, context) => {
         const token = await this.token(context);
         if (!token) return this.naoConectado();
@@ -270,6 +275,7 @@ export class HubspotTools implements OnModuleInit {
           required: ['dealname', 'stage'],
         },
       },
+      escrita: true,
       execute: async (input, context) => {
         const token = await this.token(context);
         if (!token) return this.naoConectado();
@@ -306,6 +312,7 @@ export class HubspotTools implements OnModuleInit {
           required: ['texto'],
         },
       },
+      escrita: true,
       execute: async (input, context) => {
         const token = await this.token(context);
         if (!token) return this.naoConectado();
