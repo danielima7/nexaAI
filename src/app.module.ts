@@ -18,6 +18,7 @@ import { TenantModule } from './tenant/tenant.module';
 import { ConnectionsModule } from './connections/connections.module';
 import { ReportsModule } from './reports/reports.module';
 import { HealthController } from './health/health.controller';
+import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
   imports: [
@@ -48,6 +49,8 @@ import { HealthController } from './health/health.controller';
     PluggyModule,
     InstagramModule,
     ChatModule,
+    // Planilhas enviadas pelo cliente no chat
+    UploadsModule,
     // Resumo diario proativo (depende de AiModule + WhatsappModule)
     ReportsModule,
   ],

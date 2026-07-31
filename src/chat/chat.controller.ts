@@ -9,7 +9,10 @@ import {
   Post,
   Req,
   Res,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import type { Request, Response } from 'express';
 import { AiService } from '../ai/ai.service';
 import { ConversationMemoryService } from '../ai/conversation-memory.service';
@@ -20,6 +23,7 @@ import {
   acharProvedor,
   sugestoesPara,
 } from '../connections/provider-catalog';
+import { UploadService } from '../uploads/upload.service';
 
 /**
  * Chat Web do Kyrius: uma pagina simples servida pelo backend + um endpoint
@@ -42,6 +46,7 @@ export class ChatController {
     private readonly auth: ChatAuthService,
     private readonly contas: ChatAccountService,
     private readonly connections: ConnectionsService,
+    private readonly uploads: UploadService,
   ) {}
 
   /** Identificador da origem para o limite de tentativas de login. */
@@ -189,6 +194,70 @@ export class ChatController {
     return { reply };
   }
 
+  /**
+   * Recebe uma planilha enviada pelo cliente.
+   *
+   * O arquivo e convertido em texto na hora e so o texto e guardado — o
+   * binario e descartado. A IA le depois, sob demanda, pela ferramenta
+   * `arquivo_ler`.
+   */
+  @Post('chat/upload')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FileInterceptor('arquivo'))
+  async upload(
+    @UploadedFile() arquivo: Express.Multer.File,
+    @Headers('authorization') authorization?: string,
+  ): Promise<{ nome: string; linhas: number; abas: string[] }> {
+    const sessao = this.auth.validarToken(this.tokenDoHeader(authorization));
+    if (!sessao) {
+      throw new HttpException(
+        'Sessao invalida ou expirada.',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    if (!arquivo) {
+      throw new HttpException('Nenhum arquivo enviado.', HttpStatus.BAD_REQUEST);
+    }
+
+    if (!this.uploads.extensaoValida(arquivo.originalname)) {
+      throw new HttpException(
+        `Formato nao suportado. Envie ${UploadService.EXTENSOES.join(', ')}.`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (arquivo.size > UploadService.MAX_BYTES) {
+      throw new HttpException(
+        `Arquivo muito grande (maximo ${UploadService.MAX_BYTES / 1024 / 1024} MB).`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    let extraida;
+    try {
+      extraida = this.uploads.extrair(arquivo.buffer);
+    } catch (e: any) {
+      throw new HttpException(
+        e?.message ?? 'Nao consegui ler esta planilha.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const registro = await this.uploads.salvar({
+      organizationId: sessao.organizationId,
+      userId: sessao.userId,
+      nomeArquivo: arquivo.originalname,
+      extraida,
+    });
+
+    return {
+      nome: registro.nomeArquivo,
+      linhas: registro.totalLinhas,
+      abas: extraida.abas,
+    };
+  }
+
   /** Pagina do Chat Web. */
   @Get('chat')
   page(@Res() res: Response): void {
@@ -224,6 +293,8 @@ export class ChatController {
   input:focus { outline:none; border-color:var(--accent); }
   button { padding:0 18px; border-radius:10px; border:none; background:var(--accent); color:#fff; font-weight:600; cursor:pointer; }
   button:disabled { opacity:.5; cursor:default; }
+  .anexo { background:none; border:1px solid #374151; color:var(--muted); padding:0 14px; font-size:17px; }
+  .anexo:hover { border-color:var(--accent); }
   #login { position:fixed; inset:0; background:var(--bg); display:flex; align-items:center; justify-content:center; z-index:10; }
   #login .caixa { background:var(--panel); padding:32px; border-radius:16px; width:min(380px,90vw); border:1px solid #1f2937; }
   #login h2 { margin:0 0 6px; font-size:20px; }
@@ -258,6 +329,8 @@ export class ChatController {
   </header>
   <div id="messages" class="oculto"></div>
   <form id="form" class="oculto">
+    <input type="file" id="arquivo" accept=".xlsx,.xls,.csv" style="display:none" />
+    <button type="button" id="anexar" class="anexo" title="Enviar planilha (Excel ou CSV)">📎</button>
     <input id="input" placeholder="Escreva uma mensagem..." autocomplete="off" />
     <button id="send" type="submit">Enviar</button>
   </form>
@@ -367,6 +440,57 @@ export class ChatController {
   sair.addEventListener('click', () => {
     localStorage.removeItem('kyrius_nome');
     mostrarLogin('');
+  });
+
+  // --- Envio de planilha ---
+  const arquivo = document.getElementById('arquivo');
+  const anexar = document.getElementById('anexar');
+
+  anexar.addEventListener('click', () => arquivo.click());
+
+  arquivo.addEventListener('change', async () => {
+    const f = arquivo.files && arquivo.files[0];
+    if (!f) return;
+
+    const chips = document.getElementById('sugestoes');
+    if (chips) chips.remove();
+
+    add('📎 ' + f.name, 'me');
+    const enviando = add('lendo a planilha...', 'bot typing');
+    anexar.disabled = true;
+
+    try {
+      const dados = new FormData();
+      dados.append('arquivo', f);
+      const r = await fetch('/chat/upload', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token() },
+        body: dados
+      });
+      enviando.remove();
+
+      if (r.status === 401) { mostrarLogin('Sua sessao expirou. Entre novamente.'); return; }
+
+      const resp = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        add(resp.message || 'Nao consegui ler este arquivo.', 'bot');
+        return;
+      }
+
+      add(
+        'Planilha "' + resp.nome + '" recebida — ' + resp.linhas + ' linhas' +
+        (resp.abas && resp.abas.length > 1 ? ' em ' + resp.abas.length + ' abas' : '') +
+        '. Pode perguntar o que quiser sobre ela.',
+        'bot'
+      );
+    } catch (err) {
+      enviando.remove();
+      add('Erro ao enviar o arquivo.', 'bot');
+    } finally {
+      anexar.disabled = false;
+      arquivo.value = '';
+      input.focus();
+    }
   });
 
   form.addEventListener('submit', async (e) => {

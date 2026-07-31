@@ -87,6 +87,25 @@ model Invite {
   @@index([email])
 }
 
+/// Planilha enviada pelo cliente no chat.
+///
+/// Guardamos o CONTEUDO JA EXTRAIDO em texto, nunca o arquivo binario: e o
+/// texto que a IA precisa ler, ele ocupa uma fracao do espaco, entra no backup
+/// normalmente e nao exige volume nem storage externo.
+model Upload {
+  id             String   @id @default(uuid())
+  organizationId String
+  userId         String?
+  nomeArquivo    String
+  /// Conteudo tabular em texto, ja truncado no limite de leitura.
+  conteudo       String
+  /// Quantas linhas o arquivo tinha antes de truncar (para avisar o usuario).
+  totalLinhas    Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId])
+}
+
 /// Alerta: avisa a organizacao quando algo muda.
 ///
 /// Diferente do resumo diario, que sai no horario marcado sempre. O alerta

@@ -5,6 +5,7 @@ import { ChatAuthService } from './chat-auth.service';
 import { ChatAccountService } from './chat-account.service';
 import { InviteService } from './invite.service';
 import { AiModule } from '../ai/ai.module';
+import { UploadsModule } from '../uploads/uploads.module';
 
 /**
  * Modulo do Chat Web. Reaproveita o AiModule (IA + memoria) e o TenantService
@@ -12,7 +13,7 @@ import { AiModule } from '../ai/ai.module';
  * de mensagens.
  */
 @Module({
-  imports: [AiModule],
+  imports: [AiModule, UploadsModule],
   controllers: [ChatController, InviteController],
   providers: [ChatAuthService, ChatAccountService, InviteService],
   // ChatAuthService e exportado para a tela de integracoes reaproveitar a
