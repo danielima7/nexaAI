@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { createHmac, timingSafeEqual } from 'crypto';
 import axios, { AxiosInstance } from 'axios';
 
 /** Conta do Instagram Business vinculada a uma Pagina do Facebook. */
@@ -320,6 +321,48 @@ export class InstagramService {
     }
 
     return resultado;
+  }
+
+  // ---------- Mensagens diretas (Direct) ----------
+
+  /**
+   * Responde uma mensagem no Direct.
+   *
+   * `destinatario` e o IGSID de quem escreveu — um identificador opaco por
+   * (conta, remetente). Nao e o @ da pessoa, e so vale para esta conta: nao
+   * serve para iniciar conversa com alguem que nunca escreveu.
+   */
+  async responderDirect(
+    token: string,
+    destinatario: string,
+    texto: string,
+  ): Promise<void> {
+    const conta = await this.resolveConta(token);
+    try {
+      await this.http().post(`/${conta.id}/messages`, {
+        recipient: { id: destinatario },
+        message: { text: texto },
+        access_token: token,
+      });
+    } catch (e: any) {
+      throw this.falha(e, 'responder a mensagem no Direct');
+    }
+  }
+
+  /** Verifica a assinatura do webhook usando o segredo do app Meta. */
+  assinaturaValida(corpoBruto: string, assinatura?: string): boolean {
+    const segredo = this.config.get<string>('META_APP_SECRET');
+    if (!segredo || !assinatura?.startsWith('sha256=')) return false;
+
+    const esperado = createHmac('sha256', segredo)
+      .update(corpoBruto, 'utf8')
+      .digest('hex');
+    const recebido = assinatura.slice('sha256='.length);
+
+    // Comparacao em tempo constante; tamanhos diferentes ja invalidam.
+    const a = Buffer.from(esperado, 'hex');
+    const b = Buffer.from(recebido, 'hex');
+    return a.length === b.length && timingSafeEqual(a, b);
   }
 
   async listarPublicacoes(

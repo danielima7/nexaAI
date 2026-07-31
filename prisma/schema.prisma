@@ -16,6 +16,14 @@ model Organization {
   name      String
   createdAt DateTime @default(now())
 
+  /// Instrucoes que o dono escreve para o atendimento AO PUBLICO (ex: Direct
+  /// do Instagram): horario, endereco, servicos, precos, o que responder e o
+  /// que nao responder. Vazio = o atendimento publico fica desligado.
+  ///
+  /// Fica aqui, e nao no system prompt, porque e conteudo de cada cliente —
+  /// muda por organizacao e o proprio dono edita pela conversa.
+  atendimentoInstrucoes String?
+
   users User[]
 }
 

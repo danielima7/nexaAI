@@ -43,6 +43,28 @@ export class AiService {
     'a usar a pagina de integracoes.',
   ].join(' ');
 
+  /**
+   * Prompt do atendimento AO PUBLICO (ex: Direct do Instagram).
+   *
+   * Quem fala aqui NAO e o dono da empresa — e um cliente dele. Por isso o
+   * assistente muda de papel: deixa de ser o analista interno e vira o
+   * atendimento da loja. As instrucoes especificas de cada empresa entram
+   * depois deste bloco, escritas pelo proprio dono.
+   */
+  private readonly systemPromptPublico = [
+    'Voce e o atendimento virtual de uma empresa, conversando com um cliente ou',
+    'interessado que entrou em contato. Responda em portugues do Brasil, de forma',
+    'cordial, curta e direta.',
+    'Responda SOMENTE com base nas informacoes fornecidas abaixo pelo dono da',
+    'empresa. Se a pergunta nao estiver coberta por elas, diga que vai verificar',
+    'e que alguem da equipe retorna — nunca invente horario, preco, prazo,',
+    'endereco ou disponibilidade.',
+    'Voce nao tem acesso a dados internos, financeiros ou de outros clientes, e',
+    'nao deve prometer nada em nome da empresa.',
+    'Se pedirem dados pessoais, pagamento ou algo sensivel, oriente a pessoa a',
+    'falar diretamente com a equipe.',
+  ].join(' ');
+
   /** Limite de rodadas de tool use por mensagem (evita loop infinito). */
   private readonly MAX_TOOL_ROUNDS = 5;
 
@@ -54,6 +76,23 @@ export class AiService {
     this.model =
       this.config.get<string>('ANTHROPIC_MODEL') ?? 'claude-opus-4-8';
     this.client = new Anthropic({ apiKey });
+  }
+
+  /**
+   * Monta o prompt de sistema conforme quem esta do outro lado.
+   *
+   * `owner` (WhatsApp corporativo, chat web) recebe o assistente completo.
+   * `public` (Direct do Instagram) recebe o atendimento, restrito as
+   * instrucoes que o dono escreveu — sem elas, nao ha o que responder e o
+   * proprio prompt orienta a encaminhar para a equipe.
+   */
+  private montarSystem(context?: ToolContext): string {
+    if (context?.audience !== 'public') return this.systemPrompt;
+
+    const instrucoes = context.instrucoesPublicas?.trim();
+    return instrucoes
+      ? `${this.systemPromptPublico}\n\nInformacoes da empresa (fornecidas pelo dono):\n${instrucoes}`
+      : this.systemPromptPublico;
   }
 
   /**
@@ -77,6 +116,9 @@ export class AiService {
       // `public`; o padrao (`owner`) mantem os canais atuais inalterados.
       const toolDefs = this.tools.getDefinitions(context?.audience);
 
+      // O papel do assistente muda conforme quem esta do outro lado.
+      const system = this.montarSystem(context);
+
       // Loop de tool use: repete enquanto a IA pedir para usar ferramentas.
       for (let round = 0; round < this.MAX_TOOL_ROUNDS; round++) {
         const response = await this.client.messages.create({
@@ -88,7 +130,7 @@ export class AiService {
           system: [
             {
               type: 'text',
-              text: this.systemPrompt,
+              text: system,
               cache_control: { type: 'ephemeral' },
             },
           ],

@@ -28,6 +28,13 @@ export interface ToolContext {
    * (WhatsApp corporativo e chat web) sao do proprio dono.
    */
   audience?: ToolAudience;
+
+  /**
+   * Instrucoes que o dono escreveu para o atendimento ao publico.
+   * Usadas apenas quando `audience` e `public` — definem quem o assistente e
+   * e o que ele pode dizer para quem chega pelo Direct.
+   */
+  instrucoesPublicas?: string | null;
 }
 
 /**

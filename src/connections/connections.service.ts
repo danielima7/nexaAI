@@ -170,6 +170,31 @@ export class ConnectionsService implements OnModuleInit {
     );
   }
 
+  /**
+   * Acha a organizacao cuja credencial de um provedor tem `campo === valor`.
+   *
+   * Usado pelo webhook do Instagram: o evento chega identificado pela conta que
+   * recebeu a mensagem, e e assim que descobrimos de quem e a conversa. Como as
+   * credenciais sao cifradas, nao da para filtrar no SQL — precisamos abrir uma
+   * a uma. Aceitavel na escala de dezenas de organizacoes; com milhares, o
+   * caminho e guardar o identificador em coluna propria e indexada.
+   */
+  async acharOrganizacaoPor(
+    provider: string,
+    campo: string,
+    valor: string,
+  ): Promise<string | undefined> {
+    const conexoes = await this.prisma.connection.findMany({
+      where: { provider },
+    });
+
+    for (const conexao of conexoes) {
+      const credenciais = this.abrir(conexao.credentials, provider);
+      if (credenciais?.[campo] === valor) return conexao.organizationId;
+    }
+    return undefined;
+  }
+
   /** Lista os provedores conectados por uma organizacao. */
   async listProviders(organizationId: string): Promise<string[]> {
     const rows = await this.prisma.connection.findMany({

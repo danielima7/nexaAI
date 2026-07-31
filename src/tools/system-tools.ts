@@ -112,6 +112,56 @@ export class SystemTools implements OnModuleInit {
       },
     });
 
+    /**
+     * Instrucoes do atendimento ao publico (hoje, Direct do Instagram).
+     *
+     * Enquanto estiver vazio, o atendimento publico fica DESLIGADO — melhor
+     * nao responder do que responder qualquer coisa em nome da empresa.
+     */
+    this.registry.register({
+      definition: {
+        name: 'kyrius_configurar_atendimento',
+        description:
+          'Define ou consulta as instrucoes do atendimento automatico ao publico (mensagens no Direct do Instagram): horario, endereco, servicos, precos e o que responder. Chame sem argumentos para ver as instrucoes atuais. Enquanto nao houver instrucoes, o atendimento ao publico fica desligado.',
+        input_schema: {
+          type: 'object',
+          properties: {
+            instrucoes: {
+              type: 'string',
+              description:
+                'Texto com as informacoes da empresa para o atendimento. Envie string vazia para desligar o atendimento publico.',
+            },
+          },
+        },
+      },
+      escrita: true,
+      execute: async (input, context) => {
+        if (!context?.organizationId)
+          return 'Nao consegui identificar sua organizacao.';
+
+        // Sem argumento: apenas consulta.
+        if (typeof input?.instrucoes !== 'string') {
+          const org = await this.prisma.organization.findUnique({
+            where: { id: context.organizationId },
+          });
+          const atuais = org?.atendimentoInstrucoes?.trim();
+          return atuais
+            ? `Atendimento ao publico ATIVO. Instrucoes atuais:\n\n${atuais}`
+            : 'O atendimento ao publico esta DESLIGADO (nenhuma instrucao definida). Me diga o que o atendimento deve saber — horario, endereco, servicos, precos — que eu configuro.';
+        }
+
+        const texto = input.instrucoes.trim();
+        await this.prisma.organization.update({
+          where: { id: context.organizationId },
+          data: { atendimentoInstrucoes: texto || null },
+        });
+
+        return texto
+          ? `Atendimento ao publico ATIVADO. Quem mandar mensagem no seu Direct sera respondido com base nestas informacoes:\n\n${texto}`
+          : 'Atendimento ao publico DESLIGADO. Mensagens no Direct nao serao mais respondidas automaticamente.';
+      },
+    });
+
     this.registry.register({
       definition: {
         name: 'kyrius_historico_operacoes',
