@@ -12,6 +12,7 @@
     "chat:acesso": "ts-node src/scripts/criar-acesso-chat.ts",
     "chat:convite": "ts-node src/scripts/criar-convite.ts",
     "banco:backup": "ts-node src/scripts/backup-banco.ts",
+    "demo:criar": "ts-node src/scripts/criar-demo.ts",
     "test": "jest",
     "test:watch": "jest --watch"
   },

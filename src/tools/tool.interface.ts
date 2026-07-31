@@ -35,6 +35,13 @@ export interface ToolContext {
    * e o que ele pode dizer para quem chega pelo Direct.
    */
   instrucoesPublicas?: string | null;
+
+  /**
+   * Organizacao de DEMONSTRACAO: as ferramentas devolvem dados ficticios em vez
+   * de chamar as APIs reais. Usado para apresentar o produto sem credenciais e
+   * sem expor dados de ninguem.
+   */
+  demo?: boolean;
 }
 
 /**

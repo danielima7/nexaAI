@@ -74,12 +74,21 @@ export class ChatAccountService {
   }
 
   /**
-   * Confere se o usuario do token ainda existe e pertence a organizacao dele.
-   * Protege o caso de a conta ser removida enquanto o token ainda e valido.
+   * Confere se o usuario do token ainda existe e pertence a organizacao dele,
+   * devolvendo tambem a organizacao.
+   *
+   * Valida porque a conta pode ter sido removida enquanto o token continua
+   * valido; devolve a organizacao porque quem chama precisa saber, por exemplo,
+   * se ela e de demonstracao — e uma consulta so resolve as duas coisas.
    */
-  async sessaoAindaVale(userId: string, organizationId: string): Promise<boolean> {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    return !!user && user.organizationId === organizationId;
+  async carregarSessao(userId: string, organizationId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { organization: true },
+    });
+
+    if (!user || user.organizationId !== organizationId) return null;
+    return { user, organizacao: user.organization };
   }
 
   /**

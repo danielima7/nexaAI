@@ -5,17 +5,31 @@ import { GoogleModule } from '../integrations/google/google.module';
 import { ReportScheduleService } from './report-schedule.service';
 import { DailyReportService } from './daily-report.service';
 import { ReportTools } from './report.tools';
+import { NotificacaoService } from './notificacao.service';
+import { AlertService } from './alert.service';
+import { AlertTools } from './alert.tools';
 
 /**
- * Resumo diario proativo: o Kyrius envia o panorama do negocio sozinho,
- * no horario escolhido por cada organizacao.
+ * Avisos proativos: o Kyrius falando sem ser perguntado.
  *
- * Importa AiModule (gera o texto) e WhatsappModule (entrega). O agendamento
- * em si vem do ScheduleModule, registrado uma unica vez no AppModule.
+ * Duas formas, com custos bem diferentes:
+ *  - RESUMO DIARIO: sai no horario marcado, sempre. Uma chamada de IA por dia.
+ *  - ALERTA: verifica periodicamente e so avisa quando MUDA. A verificacao e
+ *    codigo puro; a IA so entra para redigir o aviso.
+ *
+ * Ambos entregam pelo NotificacaoService, que usa a conta Google que a
+ * organizacao ja autorizou.
  */
 @Module({
   imports: [AiModule, WhatsappModule, GoogleModule],
-  providers: [ReportScheduleService, DailyReportService, ReportTools],
-  exports: [DailyReportService, ReportScheduleService],
+  providers: [
+    NotificacaoService,
+    ReportScheduleService,
+    DailyReportService,
+    ReportTools,
+    AlertService,
+    AlertTools,
+  ],
+  exports: [DailyReportService, ReportScheduleService, AlertService],
 })
 export class ReportsModule {}

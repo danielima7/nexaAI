@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import Anthropic from '@anthropic-ai/sdk';
 import { AgentTool, ToolAudience, ToolContext } from './tool.interface';
 import { PrismaService } from '../prisma/prisma.service';
+import { respostaDemo, temRespostaDemo } from '../demo/demo-data';
 
 /**
  * Registro central de ferramentas (Tools) disponiveis para a IA.
@@ -47,6 +48,11 @@ export class ToolRegistryService {
   /** Ha alguma ferramenta registrada? */
   hasTools(): boolean {
     return this.tools.size > 0;
+  }
+
+  /** A ferramenta existe? Usado para validar alertas antes de salvar. */
+  existe(nome: string): boolean {
+    return this.tools.has(nome);
   }
 
   /** Audiencia efetiva da ferramenta (omitida = `owner`, fail-closed). */
@@ -121,7 +127,16 @@ export class ToolRegistryService {
     let success = true;
     try {
       this.logger.log(`Executando tool ${name} com input: ${JSON.stringify(input)}`);
-      result = await tool.execute(input, context);
+
+      // Organizacao de demonstracao: devolvemos dados ficticios sem chamar a
+      // API real. Note que so a RESPOSTA e simulada — a escolha da ferramenta
+      // pela IA, a auditoria e a confirmacao de escrita acontecem de verdade,
+      // entao a apresentacao mostra o produto, nao uma encenacao.
+      if (context?.demo && temRespostaDemo(name)) {
+        result = respostaDemo(name);
+      } else {
+        result = await tool.execute(input, context);
+      }
     } catch (error: any) {
       success = false;
       const details = error?.response?.data ?? error?.message ?? error;

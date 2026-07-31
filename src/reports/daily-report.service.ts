@@ -3,10 +3,9 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
 import { ConversationMemoryService } from '../ai/conversation-memory.service';
-import { ConnectionsService } from '../connections/connections.service';
 import { WhatsappService } from '../integrations/whatsapp/whatsapp.service';
-import { GoogleService } from '../integrations/google/google.service';
 import { ReportScheduleService } from './report-schedule.service';
+import { NotificacaoService } from './notificacao.service';
 
 /** Canais por onde o resumo pode sair. */
 export type CanalResumo = 'email' | 'whatsapp';
@@ -53,9 +52,8 @@ export class DailyReportService {
     private readonly agenda: ReportScheduleService,
     private readonly ai: AiService,
     private readonly memory: ConversationMemoryService,
-    private readonly connections: ConnectionsService,
     private readonly whatsapp: WhatsappService,
-    private readonly google: GoogleService,
+    private readonly notificacao: NotificacaoService,
   ) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
@@ -112,23 +110,12 @@ export class DailyReportService {
   // ---------- Entrega por e-mail (padrao) ----------
 
   private async enviarPorEmail(destino: DestinoResumo): Promise<string> {
-    const para = destino.emailTo?.trim() || (await this.emailDaOrganizacao(destino.organizationId));
+    const para =
+      destino.emailTo?.trim() ||
+      (await this.notificacao.emailDaOrganizacao(destino.organizationId));
     if (!para) {
       throw new Error(
         'Nenhum e-mail de destino: a organizacao nao tem conta de acesso nem e-mail configurado.',
-      );
-    }
-
-    // O envio usa a conta Google que a organizacao ja autorizou (a mesma das
-    // planilhas), entao o e-mail sai dela para ela — sem provedor externo.
-    const refreshToken = await this.connections.resolveToken(
-      { organizationId: destino.organizationId },
-      'google',
-      'GOOGLE_REFRESH_TOKEN',
-    );
-    if (!refreshToken) {
-      throw new Error(
-        'O Google nao esta conectado para esta organizacao — necessario para enviar o resumo por e-mail.',
       );
     }
 
@@ -137,28 +124,14 @@ export class DailyReportService {
       timeZone: 'America/Sao_Paulo',
     });
 
-    await this.google.sendEmail(
-      refreshToken,
-      para,
+    await this.notificacao.enviarEmail(
+      destino.organizationId,
       `Kyrius — resumo de ${hoje}`,
       texto,
+      para,
     );
 
-    this.logger.log(
-      `Resumo diario enviado por e-mail para ${para} (organizacao ${destino.organizationId}).`,
-    );
     return texto;
-  }
-
-  /** E-mail da primeira conta de acesso da organizacao. */
-  private async emailDaOrganizacao(
-    organizationId: string,
-  ): Promise<string | undefined> {
-    const usuarios = await this.prisma.user.findMany({
-      where: { organizationId },
-      orderBy: { createdAt: 'asc' },
-    });
-    return usuarios.find((u) => !!u.email)?.email ?? undefined;
   }
 
   // ---------- Entrega por WhatsApp ----------

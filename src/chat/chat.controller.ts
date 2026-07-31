@@ -15,6 +15,11 @@ import { AiService } from '../ai/ai.service';
 import { ConversationMemoryService } from '../ai/conversation-memory.service';
 import { ChatAuthService } from './chat-auth.service';
 import { ChatAccountService } from './chat-account.service';
+import { ConnectionsService } from '../connections/connections.service';
+import {
+  acharProvedor,
+  sugestoesPara,
+} from '../connections/provider-catalog';
 
 /**
  * Chat Web do Kyrius: uma pagina simples servida pelo backend + um endpoint
@@ -36,6 +41,7 @@ export class ChatController {
     private readonly memory: ConversationMemoryService,
     private readonly auth: ChatAuthService,
     private readonly contas: ChatAccountService,
+    private readonly connections: ConnectionsService,
   ) {}
 
   /** Identificador da origem para o limite de tentativas de login. */
@@ -103,6 +109,41 @@ export class ChatController {
     };
   }
 
+  /**
+   * Tela inicial do chat: saudacao e perguntas sugeridas.
+   *
+   * A tela em branco e a maior barreira de um produto conversacional — o dono
+   * da empresa nao imagina o que pode pedir. As sugestoes saem do que a
+   * organizacao realmente conectou, entao ninguem recebe a dica de perguntar
+   * por inadimplentes sem ter o financeiro ligado.
+   */
+  @Get('chat/inicio')
+  async inicio(
+    @Headers('authorization') authorization?: string,
+  ): Promise<{ saudacao: string; sugestoes: string[] }> {
+    const sessao = this.auth.validarToken(this.tokenDoHeader(authorization));
+    if (!sessao) {
+      throw new HttpException(
+        'Sessao invalida ou expirada.',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    const conectados = await this.connections.listProviders(
+      sessao.organizationId,
+    );
+    const nomes = conectados
+      .map((id) => acharProvedor(id)?.nome ?? id)
+      .filter(Boolean);
+
+    const saudacao =
+      nomes.length === 0
+        ? 'Ola! Sou o Kyrius. Ainda nao ha nenhuma conta conectada — assim que voce conectar em "Integracoes", posso consultar seus dados e responder sobre o seu negocio.'
+        : `Ola! Sou o Kyrius. Ja estou conectado a ${nomes.join(', ')}. Pode perguntar o que quiser sobre o seu negocio.`;
+
+    return { saudacao, sugestoes: sugestoesPara(conectados) };
+  }
+
   /** Endpoint do chat: exige token de sessao valido. */
   @Post('chat')
   async chat(
@@ -118,11 +159,11 @@ export class ChatController {
     }
 
     // O token e assinado, mas a conta pode ter sido removida desde a emissao.
-    const valida = await this.contas.sessaoAindaVale(
+    const dados = await this.contas.carregarSessao(
       sessao.userId,
       sessao.organizationId,
     );
-    if (!valida) {
+    if (!dados) {
       throw new HttpException(
         'Sessao invalida ou expirada.',
         HttpStatus.UNAUTHORIZED,
@@ -137,7 +178,12 @@ export class ChatController {
 
     await this.memory.append(contact, { role: 'user', content: body.message }, scope);
     const history = await this.memory.getHistory(contact);
-    const reply = await this.ai.generateReply(history, { contact, ...scope });
+    const reply = await this.ai.generateReply(history, {
+      contact,
+      ...scope,
+      // Em organizacao de demonstracao, as ferramentas devolvem dados ficticios.
+      demo: dados.organizacao.demo,
+    });
     await this.memory.append(contact, { role: 'assistant', content: reply }, scope);
 
     return { reply };
@@ -170,6 +216,9 @@ export class ChatController {
   .me { align-self:flex-end; background:var(--me); color:#fff; border-bottom-right-radius:4px; }
   .bot { align-self:flex-start; background:var(--bot); border-bottom-left-radius:4px; }
   .typing { color:var(--muted); font-style:italic; }
+  #sugestoes { display:flex; flex-wrap:wrap; gap:8px; align-self:flex-start; max-width:78%; margin-top:-4px; }
+  #sugestoes button { background:none; border:1px solid #374151; color:var(--muted); padding:8px 14px; border-radius:20px; font-size:13px; font-weight:400; cursor:pointer; text-align:left; }
+  #sugestoes button:hover { border-color:var(--accent); color:var(--text); }
   form { display:flex; gap:10px; padding:16px; background:var(--panel); border-top:1px solid #1f2937; max-width:820px; width:100%; margin:0 auto; }
   input { flex:1; padding:12px 14px; border-radius:10px; border:1px solid #374151; background:#0b1220; color:var(--text); font-size:15px; }
   input:focus { outline:none; border-color:var(--accent); }
@@ -237,8 +286,42 @@ export class ChatController {
     [cabecalho, messages, form].forEach(el => el.classList.remove('oculto'));
     const nome = localStorage.getItem('kyrius_nome');
     if (nome) quem.textContent = '· ' + nome;
-    if (!messages.hasChildNodes()) add('Ola! Sou o Kyrius. Como posso ajudar?', 'bot');
+    if (!messages.hasChildNodes()) carregarInicio();
     input.focus();
+  }
+
+  // Saudacao e sugestoes vem do servidor, montadas a partir do que a
+  // organizacao conectou — nao adianta sugerir "quem esta inadimplente?"
+  // para quem nao ligou o financeiro.
+  async function carregarInicio() {
+    let dados = { saudacao: 'Ola! Sou o Kyrius. Como posso ajudar?', sugestoes: [] };
+    try {
+      const r = await fetch('/chat/inicio', {
+        headers: { 'Authorization': 'Bearer ' + token() }
+      });
+      if (r.status === 401) { mostrarLogin('Sua sessao expirou. Entre novamente.'); return; }
+      if (r.ok) dados = await r.json();
+    } catch (err) { /* mantem a saudacao padrao */ }
+
+    add(dados.saudacao, 'bot');
+    if (dados.sugestoes && dados.sugestoes.length) mostrarSugestoes(dados.sugestoes);
+  }
+
+  function mostrarSugestoes(lista) {
+    const caixa = document.createElement('div');
+    caixa.id = 'sugestoes';
+    for (const texto of lista) {
+      const chip = document.createElement('button');
+      chip.textContent = texto;
+      chip.onclick = () => {
+        caixa.remove();
+        input.value = texto;
+        form.requestSubmit();
+      };
+      caixa.appendChild(chip);
+    }
+    messages.appendChild(caixa);
+    messages.scrollTop = messages.scrollHeight;
   }
 
   function mostrarLogin(mensagem) {
@@ -290,6 +373,9 @@ export class ChatController {
     e.preventDefault();
     const text = input.value.trim();
     if (!text) return;
+    // Escrever a propria pergunta tambem dispensa as sugestoes.
+    const chips = document.getElementById('sugestoes');
+    if (chips) chips.remove();
     add(text, 'me');
     input.value = '';
     send.disabled = true;

@@ -24,6 +24,14 @@ model Organization {
   /// muda por organizacao e o proprio dono edita pela conversa.
   atendimentoInstrucoes String?
 
+  /// Organizacao de DEMONSTRACAO: as ferramentas devolvem dados ficticios em
+  /// vez de chamar as APIs reais.
+  ///
+  /// Serve para apresentar o produto sem expor dados de ninguem. O fluxo
+  /// continua sendo o real — a IA escolhe a ferramenta, a execucao e auditada,
+  /// escrita pede confirmacao — so a resposta da integracao e inventada.
+  demo Boolean @default(false)
+
   users User[]
 }
 
@@ -77,6 +85,38 @@ model Invite {
   createdAt      DateTime  @default(now())
 
   @@index([email])
+}
+
+/// Alerta: avisa a organizacao quando algo muda.
+///
+/// Diferente do resumo diario, que sai no horario marcado sempre. O alerta
+/// executa uma ferramenta periodicamente, compara com o resultado anterior e
+/// so avisa QUANDO MUDOU — cliente novo inadimplente, boleto que venceu,
+/// saldo que caiu.
+///
+/// A comparacao e feita em codigo, sem IA. A IA so entra para redigir o aviso
+/// no momento em que ha algo a dizer: verificar com IA a cada 15 minutos
+/// custaria mais que a mensalidade do cliente.
+model Alert {
+  id             String    @id @default(uuid())
+  organizationId String
+  /// O que o usuario pediu, com as palavras dele. Usado no aviso.
+  descricao      String
+  /// Ferramenta executada a cada verificacao (ex: asaas_cobrancas_vencidas).
+  ferramenta     String
+  /// Argumentos da ferramenta, quando ela precisar de algum.
+  argumentos     Json?
+  /// Intervalo minimo entre verificacoes.
+  frequenciaMin  Int       @default(60)
+  ativo          Boolean   @default(true)
+  /// Resultado da ultima verificacao — a base da comparacao.
+  ultimoResultado String?
+  lastCheckedAt  DateTime?
+  lastFiredAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([organizationId])
 }
 
 /// Preferencia de resumo diario proativo de uma organizacao.
