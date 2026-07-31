@@ -183,7 +183,7 @@ export class ChatController {
 
     await this.memory.append(contact, { role: 'user', content: body.message }, scope);
     const history = await this.memory.getHistory(contact);
-    const reply = await this.ai.generateReply(history, {
+    const reply = await this.ai.generateReply('chat', history, {
       contact,
       ...scope,
       // Em organizacao de demonstracao, as ferramentas devolvem dados ficticios.

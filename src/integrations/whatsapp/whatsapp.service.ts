@@ -61,7 +61,10 @@ export class WhatsappService {
     // 2. Pergunta a IA (Claude) considerando TODO o historico do contato.
     //    Passa contato + organizacao + usuario como contexto (auditoria/tools).
     const history = await this.memory.getHistory(from);
-    const reply = await this.ai.generateReply(history, { contact: from, ...scope });
+    const reply = await this.ai.generateReply('whatsapp', history, {
+      contact: from,
+      ...scope,
+    });
 
     // 3. Guarda a resposta da IA no historico (para lembrar no proximo turno).
     await this.memory.append(from, { role: 'assistant', content: reply }, scope);

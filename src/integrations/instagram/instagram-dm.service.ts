@@ -116,7 +116,7 @@ export class InstagramDmService {
     );
     const historico = await this.memory.getHistory(contact);
 
-    const resposta = await this.ai.generateReply(historico, {
+    const resposta = await this.ai.generateReply('instagram_dm', historico, {
       contact,
       organizationId,
       audience: 'public',

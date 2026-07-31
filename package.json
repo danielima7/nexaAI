@@ -14,7 +14,8 @@
     "banco:backup": "ts-node src/scripts/backup-banco.ts",
     "demo:criar": "ts-node src/scripts/criar-demo.ts",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "modelo:avaliar": "ts-node src/scripts/avaliar-modelo.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.112.1",

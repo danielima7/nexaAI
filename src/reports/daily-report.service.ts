@@ -206,11 +206,15 @@ export class DailyReportService {
       .filter(Boolean)
       .join(' ');
 
-    return this.ai.generateReply([{ role: 'user', content: instrucao }], {
-      contact,
-      organizationId: destino.organizationId,
-      userId,
-      audience: 'owner',
-    });
+    return this.ai.generateReply(
+      'resumo_diario',
+      [{ role: 'user', content: instrucao }],
+      {
+        contact,
+        organizationId: destino.organizationId,
+        userId,
+        audience: 'owner',
+      },
+    );
   }
 }

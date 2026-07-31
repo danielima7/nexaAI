@@ -177,6 +177,40 @@ model Message {
   @@index([organizationId, createdAt])
 }
 
+/// Consumo de tokens de UMA chamada a API da Anthropic.
+///
+/// Existe separado de OperationLog porque a granularidade e outra: o
+/// OperationLog registra execucao de ferramenta, e um unico turno do usuario
+/// gera varias chamadas a API (o loop de tool use) com zero ou muitas
+/// ferramentas em cada uma.
+///
+/// Sem esta tabela nao ha como responder "quanto custa o cliente X por mes",
+/// que e a pergunta que decide preco, limite de uso e se o roteamento de
+/// modelo funcionou. Ate aqui o consumo so aparecia em logger.debug e era
+/// descartado.
+model AiUsage {
+  id             String   @id @default(uuid())
+  organizationId String?
+  userId         String?
+  /// Rota que originou a chamada (chat, alerta, instagram_dm, ...).
+  rota           String
+  /// Model ID efetivamente usado — o roteamento so e auditavel se registrado.
+  modelo         String
+  /// Posicao no loop de tool use (0 = primeira chamada do turno).
+  rodada         Int      @default(0)
+  /// Tokens de entrada cobrados integralmente (fora do prefixo cacheado).
+  inputTokens    Int      @default(0)
+  outputTokens   Int      @default(0)
+  /// Servidos do cache (~0,1x do preco de entrada).
+  cacheReadTokens  Int    @default(0)
+  /// Gravados no cache (~1,25x). Alto e constante significa cache invalidado.
+  cacheWriteTokens Int    @default(0)
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([modelo, createdAt])
+}
+
 /// Registro de cada execucao de ferramenta pela IA (auditoria/logs).
 model OperationLog {
   id             String   @id @default(uuid())

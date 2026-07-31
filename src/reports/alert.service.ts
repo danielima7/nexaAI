@@ -141,6 +141,7 @@ export class AlertService {
     ].join('\n');
 
     const texto = await this.ai.generateReply(
+      'alerta',
       [{ role: 'user', content: instrucao }],
       {
         organizationId: alerta.organizationId,

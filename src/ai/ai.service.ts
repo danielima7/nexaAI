@@ -4,6 +4,8 @@ import Anthropic from '@anthropic-ai/sdk';
 import { ChatMessage } from './conversation-memory.service';
 import { ToolRegistryService } from '../tools/tool-registry.service';
 import { ToolContext } from '../tools/tool.interface';
+import { ModelRouterService, RotaIa } from './model-router.service';
+import { AiUsageService } from './ai-usage.service';
 
 /**
  * Service de IA do Kyrius (Claude / Anthropic).
@@ -17,7 +19,6 @@ import { ToolContext } from '../tools/tool.interface';
 export class AiService {
   private readonly logger = new Logger(AiService.name);
   private readonly client: Anthropic;
-  private readonly model: string;
 
   /**
    * Prompt de sistema: define a persona e o comportamento do Kyrius.
@@ -71,10 +72,10 @@ export class AiService {
   constructor(
     private readonly config: ConfigService,
     private readonly tools: ToolRegistryService,
+    private readonly router: ModelRouterService,
+    private readonly usage: AiUsageService,
   ) {
     const apiKey = this.config.get<string>('ANTHROPIC_API_KEY');
-    this.model =
-      this.config.get<string>('ANTHROPIC_MODEL') ?? 'claude-opus-4-8';
     this.client = new Anthropic({ apiKey });
   }
 
@@ -97,13 +98,23 @@ export class AiService {
 
   /**
    * Gera uma resposta da IA considerando todo o historico da conversa.
+   *
+   * @param rota de onde partiu a chamada — define o modelo. Obrigatoria e em
+   *   primeira posicao de proposito: uma chamada nova que esquecesse de se
+   *   classificar cairia na faixa cara sem ninguem notar. Assim, nao compila.
    * @param history mensagens anteriores + a mensagem atual (ultima da lista)
    * @returns resposta em texto para enviar de volta
    */
   async generateReply(
+    rota: RotaIa,
     history: ChatMessage[],
     context?: ToolContext,
   ): Promise<string> {
+    // Resolvido UMA vez por turno: o cache de prompt e por modelo, entao
+    // trocar entre as rodadas de tool use descartaria o prefixo de ferramentas
+    // e pagaria escrita de cache de novo a cada rodada.
+    const perfil = this.router.resolver(rota);
+
     try {
       // Copia local das mensagens (o loop de tools vai crescendo esta lista).
       const messages: Anthropic.MessageParam[] = history.map((m) => ({
@@ -122,8 +133,8 @@ export class AiService {
       // Loop de tool use: repete enquanto a IA pedir para usar ferramentas.
       for (let round = 0; round < this.MAX_TOOL_ROUNDS; round++) {
         const response = await this.client.messages.create({
-          model: this.model,
-          max_tokens: 1024,
+          model: perfil.model,
+          max_tokens: perfil.maxTokens,
           // Prompt caching: o marcador no ultimo bloco de system faz a API
           // cachear TUDO que vem antes (ferramentas + system). Nas chamadas
           // seguintes, esse prefixo custa ~10% — grande reducao de custo.
@@ -136,12 +147,30 @@ export class AiService {
           ],
           messages,
           ...(toolDefs.length > 0 ? { tools: toolDefs } : {}),
+          // Omitido nas faixas/modelos que nao aceitam o parametro — a geracao
+          // 4.5 devolve 400 se receber `effort`.
+          ...(perfil.outputConfig
+            ? { output_config: perfil.outputConfig }
+            : {}),
         });
 
         // Log de cache (verificar economia): read = tokens servidos do cache.
         const u = response.usage;
         this.logger.debug(
-          `tokens: input=${u.input_tokens} cache_write=${u.cache_creation_input_tokens ?? 0} cache_read=${u.cache_read_input_tokens ?? 0} output=${u.output_tokens}`,
+          `[${rota}/${perfil.model}] tokens: input=${u.input_tokens} cache_write=${u.cache_creation_input_tokens ?? 0} cache_read=${u.cache_read_input_tokens ?? 0} output=${u.output_tokens}`,
+        );
+
+        // Persistido por rodada, e nao somado no fim do turno, para que um erro
+        // no meio do loop nao apague o custo do que ja foi gasto.
+        await this.usage.registrar(
+          {
+            rota,
+            modelo: perfil.model,
+            rodada: round,
+            organizationId: context?.organizationId,
+            userId: context?.userId,
+          },
+          u,
         );
 
         // A IA quer usar uma ou mais ferramentas.
