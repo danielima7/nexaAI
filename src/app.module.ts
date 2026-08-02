@@ -19,6 +19,7 @@ import { ConnectionsModule } from './connections/connections.module';
 import { ReportsModule } from './reports/reports.module';
 import { HealthController } from './health/health.controller';
 import { UploadsModule } from './uploads/uploads.module';
+import { SuporteModule } from './suporte/suporte.module';
 
 @Module({
   imports: [
@@ -34,6 +35,8 @@ import { UploadsModule } from './uploads/uploads.module';
     TenantModule,
     // Conexoes/credenciais por organizacao — global
     ConnectionsModule,
+    // Canal de suporte humano (link de WhatsApp) — global
+    SuporteModule,
     // Registro global de ferramentas (Tools) para a IA
     ToolsModule,
     // Modulo de IA (Claude)

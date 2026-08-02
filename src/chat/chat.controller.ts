@@ -24,6 +24,7 @@ import {
   sugestoesPara,
 } from '../connections/provider-catalog';
 import { UploadService } from '../uploads/upload.service';
+import { SuporteService } from '../suporte/suporte.service';
 
 /**
  * Chat Web do Kyrius: uma pagina simples servida pelo backend + um endpoint
@@ -47,6 +48,7 @@ export class ChatController {
     private readonly contas: ChatAccountService,
     private readonly connections: ConnectionsService,
     private readonly uploads: UploadService,
+    private readonly suporte: SuporteService,
   ) {}
 
   /** Identificador da origem para o limite de tentativas de login. */
@@ -258,11 +260,44 @@ export class ChatController {
     };
   }
 
+  /**
+   * HTML da pagina com o botao de suporte ja resolvido.
+   *
+   * Montado uma vez e reaproveitado: o numero vem de configuracao, que nao
+   * muda enquanto o processo vive, entao refazer a substituicao a cada
+   * requisicao seria trabalho jogado fora.
+   */
+  private paginaCache?: string;
+
+  private get pagina(): string {
+    if (this.paginaCache === undefined) {
+      const url = this.suporte.link(
+        'Ola! Preciso de ajuda com o Kyrius.',
+      );
+      // Sem numero configurado, o marcador vira vazio e o botao some — melhor
+      // do que um link que leva o cliente a uma tela de erro do WhatsApp
+      // justamente quando ele precisa de ajuda.
+      const botao = url
+        ? `<a class="suporte" href="${url}" target="_blank" rel="noopener noreferrer" title="Fale conosco via WhatsApp">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm5.8 14.13c-.24.68-1.42 1.31-1.95 1.36-.5.05-.99.24-3.35-.7-2.82-1.11-4.6-3.99-4.74-4.18-.14-.19-1.13-1.5-1.13-2.86 0-1.36.71-2.03.96-2.31.25-.28.55-.35.73-.35.18 0 .37 0 .53.01.17.01.4-.07.62.47.24.57.8 1.97.87 2.11.07.14.12.31.02.5-.09.19-.14.31-.28.47-.14.16-.29.36-.42.48-.14.14-.28.29-.12.57.16.28.72 1.19 1.55 1.93 1.06.95 1.96 1.24 2.24 1.38.28.14.44.12.6-.07.17-.19.69-.8.88-1.08.19-.28.37-.23.62-.14.25.09 1.6.75 1.87.89.28.14.46.21.53.33.07.12.07.69-.17 1.36z"/></svg>
+        <span>Fale conosco</span>
+      </a>`
+        : '';
+
+      this.paginaCache = ChatController.HTML.replace(
+        '<!--BOTAO_SUPORTE-->',
+        botao,
+      );
+    }
+
+    return this.paginaCache;
+  }
+
   /** Pagina do Chat Web. */
   @Get('chat')
   page(@Res() res: Response): void {
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(ChatController.HTML);
+    res.send(this.pagina);
   }
 
   private static readonly HTML = `<!doctype html>
@@ -280,6 +315,14 @@ export class ChatController {
   header small { color:var(--muted); font-weight:400; }
   header .acoes { margin-left:auto; display:flex; gap:8px; align-items:center; }
   header .sair, header .integracoes { background:none; border:1px solid #374151; color:var(--muted); padding:6px 12px; border-radius:8px; font-size:13px; cursor:pointer; text-decoration:none; display:inline-block; }
+  /* Verde do WhatsApp: e o unico elemento colorido do cabecalho, entao vira o
+     caminho obvio quando algo da errado — que e o comportamento que queremos
+     estimular no piloto. */
+  header .suporte { display:inline-flex; align-items:center; gap:6px; background:none; border:1px solid #25603f; color:#4ade80; padding:6px 12px; border-radius:8px; font-size:13px; text-decoration:none; white-space:nowrap; }
+  header .suporte:hover { border-color:#25d366; color:#25d366; }
+  /* Em tela estreita sobra so o icone: com tres itens, o texto empurraria o
+     cabecalho e quebraria a linha no celular — que e onde o dono vai abrir. */
+  @media (max-width:520px) { header .suporte span { display:none; } }
   #messages { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:12px; max-width:820px; width:100%; margin:0 auto; }
   .msg { padding:10px 14px; border-radius:14px; max-width:78%; white-space:pre-wrap; line-height:1.4; }
   .me { align-self:flex-end; background:var(--me); color:#fff; border-bottom-right-radius:4px; }
@@ -323,6 +366,7 @@ export class ChatController {
     <div class="logo">K</div>
     <div><h1>Kyrius <small id="quem">· assistente</small></h1></div>
     <div class="acoes">
+      <!--BOTAO_SUPORTE-->
       <a class="integracoes" href="/integracoes">Integracoes</a>
       <button class="sair" id="sair">Sair</button>
     </div>

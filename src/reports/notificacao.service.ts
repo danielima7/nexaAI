@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConnectionsService } from '../connections/connections.service';
 import { GoogleService } from '../integrations/google/google.service';
+import { SuporteService } from '../suporte/suporte.service';
 
 /**
  * Entrega de avisos proativos ao dono da organizacao (resumo diario, alertas).
@@ -19,6 +20,7 @@ export class NotificacaoService {
     private readonly prisma: PrismaService,
     private readonly connections: ConnectionsService,
     private readonly google: GoogleService,
+    private readonly suporte: SuporteService,
   ) {}
 
   /** E-mail da primeira conta de acesso da organizacao. */
@@ -63,7 +65,12 @@ export class NotificacaoService {
       );
     }
 
-    await this.google.sendEmail(refreshToken, para, assunto, texto);
+    // O rodape de suporte entra aqui, e nao em quem monta a mensagem, para
+    // valer em TODO aviso proativo — resumo diario e alertas — sem depender
+    // de cada chamador lembrar. Vazio quando nao ha numero configurado.
+    const corpo = texto + this.suporte.rodapeEmail();
+
+    await this.google.sendEmail(refreshToken, para, assunto, corpo);
     this.logger.log(`E-mail "${assunto}" enviado para ${para}.`);
     return para;
   }
