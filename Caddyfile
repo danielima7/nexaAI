@@ -1,0 +1,38 @@
+# Proxy reverso e TLS do Kyrius.
+#
+# O Caddy obtem e RENOVA sozinho o certificado Let's Encrypt — sem certbot,
+# sem cron, sem renovacao esquecida vencendo num domingo. Em troca, ele exige
+# duas coisas: as portas 80 e 443 abertas (a 80 e usada no desafio ACME, nao
+# so para redirecionar) e o DNS ja apontando para esta maquina ANTES de subir.
+#
+# O dominio vem de .env.caddy — deliberadamente separado do .env da aplicacao.
+# Este container e o unico exposto a internet; dar a ele o .env completo
+# colocaria a chave da Anthropic, a do Asaas e a CONNECTION_ENCRYPTION_KEY
+# dentro do processo mais atacavel da pilha, sem nenhuma necessidade.
+
+{$KYRIUS_DOMINIO} {
+	# `app` e o nome do servico no compose: resolvido pela rede interna, nunca
+	# pela internet. A aplicacao nao publica porta nenhuma no host.
+	reverse_proxy app:3000
+
+	encode gzip
+
+	header {
+		# HSTS: depois da primeira visita, o navegador se recusa a falar HTTP
+		# com este dominio. Protege o login do chat e as chaves que o cliente
+		# cola em /integracoes de downgrade e de rede hostil.
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# Nao anunciar o servidor reduz a superficie de varredura automatizada.
+		-Server
+	}
+
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+	}
+}

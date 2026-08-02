@@ -5,17 +5,32 @@
 # Logs:       docker compose -f docker-compose.prod.yml logs -f app
 # Derrubar:   docker compose -f docker-compose.prod.yml down
 #
-# ⚠️ ESTE ARQUIVO NAO USA `${VARIAVEL}` DE PROPOSITO.
+# ⚠️ ESTE ARQUIVO NAO USA `${VARIAVEL}`, E VALORES COM `$` NO `.env` PRECISAM
+# DE ASPAS SIMPLES. Configure tudo — inclusive POSTGRES_* e DATABASE_URL — la.
 #
-# O Compose interpola `${...}` lendo o `.env` da pasta — e faz isso ANTES de
-# entregar qualquer coisa ao container. Como algumas credenciais contem `$`
-# (a chave do Asaas comeca com `$aact_`), o Compose lia o trecho depois do
-# cifrao como nome de variavel, nao encontrava, e substituia por vazio: a
-# chave chegaria corrompida no container e a integracao quebraria em silencio.
-# O mesmo defeito impedia ate `docker compose down` de rodar.
+# O Compose interpola `$` nao so no YAML: ele interpola tambem o CONTEUDO dos
+# arquivos passados em `env_file`. Como a chave do Asaas comeca com `$aact_`,
+# ele le o trecho depois do cifrao como nome de variavel, nao encontra, e
+# substitui por vazio — a credencial chega VAZIA ao container e a integracao
+# falha em silencio. De quebra, ele imprime o valor no aviso de "variable is
+# not set", vazando a credencial no terminal, no log de CI e no historico do
+# shell a cada comando.
 #
-# Sem interpolacao, o `env_file` entrega o arquivo ao container byte a byte.
-# Configure tudo — inclusive POSTGRES_* e DATABASE_URL — no `.env`.
+# Evitar `${...}` no YAML NAO resolve nada disso: o problema esta na leitura do
+# env_file, nao na sintaxe daqui. Renomear o arquivo tambem nao — testado.
+#
+# O que resolve e ASPAS SIMPLES em volta do valor, no proprio `.env`:
+#
+#     ASAAS_API_KEY='$aact_...'
+#
+# Medido em 2026-08-02, com o valor entregue ao container:
+#     $aact_abc123     -> vazio          (o formato antigo, quebrado)
+#     "$aact_abc123"   -> vazio          (aspas duplas nao protegem)
+#     $$aact_abc123    -> $aact_abc123   (funciona, mas quebra o dotenv em dev)
+#     '$aact_abc123'   -> $aact_abc123   (correto)
+#
+# Aspas simples porque o dotenv da aplicacao tambem as remove: o MESMO arquivo
+# serve para desenvolvimento e producao, sem formato divergente para manter.
 
 services:
   postgres:
@@ -45,10 +60,34 @@ services:
         condition: service_healthy
     env_file:
       - .env
+    # Sem `ports`: a aplicacao NAO e publicada no host. Quem fala com ela e o
+    # Caddy, pela rede interna do compose (`app:3000`). Publicar 3000 no host
+    # deixaria a app acessivel em HTTP puro por IP, contornando o TLS — as
+    # senhas do chat e as chaves coladas em /integracoes viajariam em claro.
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
     ports:
-      # Publique atras de um proxy reverso com TLS (Caddy, Nginx, Traefik).
-      # Trocar por "127.0.0.1:3000:3000" deixa a app acessivel apenas ao proxy.
-      - '3000:3000'
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # OBRIGATORIO persistir: e aqui que ficam os certificados. Sem este
+      # volume, cada `up` pede um certificado novo ao Let's Encrypt, que
+      # limita 5 por dominio por semana — recriar o container algumas vezes
+      # num dia de ajustes queima a cota e derruba o TLS por dias.
+      - caddy-data:/data
+      - caddy-config:/config
+      - ./logs/caddy:/var/log/caddy
+    # So o dominio. Ver o comentario no topo do Caddyfile sobre por que este
+    # container nao recebe o .env da aplicacao.
+    env_file:
+      - .env.caddy
 
 volumes:
   postgres-data:
+  caddy-data:
+  caddy-config:

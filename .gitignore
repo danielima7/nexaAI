@@ -9,6 +9,9 @@ build/
 .env
 .env.local
 .env.*.local
+# Config do proxy em producao. O .example ao lado E versionado (nome distinto,
+# nao casa com este padrao) e serve de modelo.
+.env.caddy
 
 # Logs
 logs/
