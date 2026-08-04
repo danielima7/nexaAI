@@ -56,12 +56,15 @@ export class LandingController {
         ? `href="${zap}" target="_blank" rel="noopener noreferrer"`
         : `href="mailto:${email}?subject=Demonstra%C3%A7%C3%A3o%20do%20Kyrius"`;
 
-      const cta = `<a class="btn btn-primario" ${destino}>Agendar uma demonstração</a>`;
-
       this.paginaCache = LandingController.HTML.replace(
         /<!--CTA-->/g,
-        cta,
-      ).replace(/<!--EMAIL-->/g, email);
+        `<a class="btn btn-primario" ${destino}>Agendar uma demonstração <span aria-hidden="true">&rarr;</span></a>`,
+      )
+        .replace(
+          /<!--CTA_TOPO-->/g,
+          `<a class="btn btn-topo" ${destino}>Agendar demonstração</a>`,
+        )
+        .replace(/<!--EMAIL-->/g, email);
     }
 
     return this.paginaCache;
@@ -72,7 +75,8 @@ export class LandingController {
    *
    * Inline, e nao como arquivo: a pagina continua sem nenhuma requisicao
    * externa, carrega em uma viagem so no 4G do cliente e nao quebra se um
-   * caminho de asset mudar no deploy. O gradiente acompanha a paleta azul.
+   * caminho de asset mudar no deploy. O gradiente e o mesmo da marca —
+   * desenhada sobre fundo escuro, que e o motivo de a pagina ser escura.
    */
   private static readonly LOGO = `<svg class="logo" viewBox="0 0 210 128" role="img" aria-label="Kyrius">
   <defs>
@@ -96,107 +100,156 @@ export class LandingController {
 <title>Kyrius — Converse com os sistemas da sua empresa</title>
 <meta name="description" content="Pergunte em português e saiba quem está devendo, o que vence essa semana e o que aconteceu no seu CRM — sem abrir sistema nenhum."/>
 <style>
-  /* Azul como cor da marca: para quem vai autorizar acesso ao proprio
-     financeiro, azul comunica estabilidade melhor do que qualquer outra
-     familia de cor. O fundo neutro levemente frio acompanha, sem virar o
-     branco puro que deixa a leitura dura em tela de celular ao sol. */
+  /* Escuro porque a marca foi desenhada sobre preto: no fundo claro o
+     gradiente azul-verde da logo perde forca. O azul continua sendo a cor de
+     acao — e sobre fundo escuro ele fica mais eletrico, nao menos. */
   :root {
-    --tinta:#111827; --tinta-fraca:#4b5563; --linha:#e2e8f0;
-    --fundo:#f8fafc; --papel:#ffffff; --azul:#1d4ed8; --azul-fundo:#dbeafe;
-    --verde:#166534; --verde-claro:#dcfce7; --escuro:#0f172a; --escuro-painel:#1e293b;
+    --breu:#080b14; --painel:#0f1729; --painel-alto:#151f36;
+    --borda:#1e2a44; --borda-forte:#2c3b5c;
+    /* O tenue e #73839b, e nao um cinza mais escuro: abaixo disso o contraste
+       sobre o breu cai de 4.5:1 e o aviso da demonstracao — justamente o texto
+       que diz que nada e alterado sem confirmar — fica ilegivel no celular. */
+    --tinta:#e8edf7; --tinta-fraca:#94a3b8; --tinta-tenue:#73839b;
+    --azul:#2563eb; --azul-vivo:#3b82f6; --azul-brilho:rgba(37,99,235,.45);
+    --verde:#22c55e; --verde-fundo:rgba(34,197,94,.12);
   }
   * { box-sizing:border-box; }
   html { scroll-behavior:smooth; }
   body {
-    margin:0; background:var(--fundo); color:var(--tinta);
+    margin:0; background:var(--breu); color:var(--tinta);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     font-size:17px; line-height:1.65; -webkit-font-smoothing:antialiased;
   }
-  .env { width:100%; max-width:1080px; margin:0 auto; padding:0 24px; }
-  .estreito { max-width:760px; }
+  ::selection { background:var(--azul); color:#fff; }
+  .env { width:100%; max-width:1120px; margin:0 auto; padding:0 24px; }
+  .estreito { max-width:780px; }
+
+  /* Malha tenue ao fundo do topo: da profundidade sem desenhar nada. */
+  .malha {
+    position:relative;
+    background-image:linear-gradient(var(--borda) 1px,transparent 1px),linear-gradient(90deg,var(--borda) 1px,transparent 1px);
+    background-size:56px 56px; background-position:center;
+  }
+  .malha::after {
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse 70% 60% at 50% 0%,transparent 30%,var(--breu) 78%);
+  }
+  .malha > * { position:relative; z-index:1; }
 
   /* topo */
-  .topo { padding:18px 0; border-bottom:1px solid var(--linha); background:var(--papel); }
-  .topo .env { display:flex; align-items:center; }
+  .topo { border-bottom:1px solid var(--borda); background:rgba(8,11,20,.86); backdrop-filter:blur(10px); position:sticky; top:0; z-index:20; }
+  .topo .env { display:flex; align-items:center; gap:34px; padding-top:15px; padding-bottom:15px; }
   .marca { display:flex; align-items:center; gap:11px; font-weight:700; font-size:20px; letter-spacing:-.02em; }
-  .logo { height:30px; width:auto; display:block; }
-  .rodape .logo { height:26px; }
+  .logo { height:29px; width:auto; display:block; }
+  .rodape .logo { height:25px; }
+  .menu { display:flex; gap:28px; margin-left:6px; }
+  .menu a { color:var(--tinta-fraca); text-decoration:none; font-size:15px; }
+  .menu a:hover { color:var(--tinta); }
+  .topo .btn-topo { margin-left:auto; }
 
   /* botoes */
-  .btn { display:inline-block; padding:15px 30px; border-radius:11px; font-weight:600; font-size:17px; text-decoration:none; border:1px solid transparent; }
-  .btn-primario { background:var(--azul); color:#fff; }
-  .btn-primario:hover { background:#1e3a8a; }
-  .acoes { display:flex; flex-wrap:wrap; gap:12px; margin-top:32px; }
+  .btn { display:inline-flex; align-items:center; gap:9px; border-radius:11px; font-weight:600; text-decoration:none; border:1px solid transparent; }
+  .btn-primario {
+    background:var(--azul); color:#fff; padding:17px 34px; font-size:17px;
+    box-shadow:0 0 0 1px var(--azul-vivo), 0 14px 42px -10px var(--azul-brilho);
+  }
+  .btn-primario:hover { background:var(--azul-vivo); box-shadow:0 0 0 1px var(--azul-vivo), 0 16px 52px -8px var(--azul-brilho); }
+  .btn-topo { background:var(--azul); color:#fff; padding:10px 20px; font-size:15px; white-space:nowrap; }
+  .btn-topo:hover { background:var(--azul-vivo); }
+  .acoes { display:flex; flex-wrap:wrap; gap:14px; align-items:center; margin-top:36px; }
+  a:focus-visible, .btn:focus-visible { outline:2px solid var(--azul-vivo); outline-offset:3px; }
+
+  /* Eyebrow: qualifica QUEM deve continuar lendo, nao descreve o produto. */
+  .publico {
+    display:inline-block; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:13px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--azul-vivo); margin-bottom:26px;
+  }
+  .rotulo {
+    display:inline-block; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:12px; letter-spacing:.15em; text-transform:uppercase;
+    color:var(--azul-vivo); margin-bottom:20px;
+  }
 
   /* secoes */
-  section { padding:88px 0; }
-  section.papel { background:var(--papel); border-top:1px solid var(--linha); border-bottom:1px solid var(--linha); }
-  h1 { font-size:clamp(34px,5.2vw,54px); line-height:1.12; letter-spacing:-.03em; margin:0 0 22px; font-weight:800; }
-  h2 { font-size:clamp(26px,3.4vw,36px); line-height:1.2; letter-spacing:-.02em; margin:0 0 18px; font-weight:750; }
-  h3 { font-size:19px; margin:0 0 8px; font-weight:650; letter-spacing:-.01em; }
-  .chamada { font-size:clamp(18px,2.1vw,21px); color:var(--tinta-fraca); margin:0; max-width:640px; }
-  .rotulo { display:inline-block; font-size:13px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--azul); background:var(--azul-fundo); padding:6px 13px; border-radius:100px; margin-bottom:22px; }
+  section { padding:96px 0; }
+  section.linhada { border-top:1px solid var(--borda); }
+  section.painel { background:var(--painel); border-top:1px solid var(--borda); border-bottom:1px solid var(--borda); }
+  h1 { font-size:clamp(40px,7vw,76px); line-height:1.03; letter-spacing:-.035em; margin:0 0 26px; font-weight:800; text-wrap:balance; }
+  h2 { font-size:clamp(28px,4vw,44px); line-height:1.13; letter-spacing:-.028em; margin:0 0 18px; font-weight:750; text-wrap:balance; }
+  h3 { font-size:19px; margin:0 0 9px; font-weight:650; letter-spacing:-.01em; }
+  .chamada { font-size:clamp(18px,2.1vw,21px); color:var(--tinta-fraca); margin:0; max-width:660px; }
+
+  /* Triade de negacao: nomeia tres objecoes em paralelo. */
+  .triade { display:flex; flex-wrap:wrap; gap:10px 22px; margin:0; font-size:clamp(17px,2vw,20px); color:var(--tinta-fraca); }
+  .triade span { display:inline-flex; align-items:center; gap:10px; }
+  .triade span::before { content:""; width:5px; height:5px; border-radius:50%; background:var(--azul-vivo); flex:none; }
+
+  /* Redutor de risco, colado no CTA. */
+  .garantia { display:flex; align-items:center; gap:10px; font-size:15px; color:var(--tinta-fraca); margin-top:20px; }
+  .garantia .tique { color:var(--verde); font-weight:700; }
 
   /* grades */
-  .grade { display:grid; gap:22px; margin-top:44px; }
+  .grade { display:grid; gap:20px; margin-top:46px; }
   .g2 { grid-template-columns:repeat(2,1fr); }
   .g3 { grid-template-columns:repeat(3,1fr); }
-  .cartao { background:var(--papel); border:1px solid var(--linha); border-radius:15px; padding:28px; }
-  section.papel .cartao { background:var(--fundo); }
+  .cartao { background:var(--painel); border:1px solid var(--borda); border-radius:15px; padding:28px; }
+  section.painel .cartao { background:var(--painel-alto); }
   .cartao p { margin:0; color:var(--tinta-fraca); font-size:16px; }
 
   /* comparacao */
-  .versus { display:grid; grid-template-columns:1fr 1fr; gap:22px; margin-top:44px; }
-  .versus > div { border-radius:15px; padding:30px; border:1px solid var(--linha); }
-  .antes { background:var(--papel); }
-  .depois { background:var(--azul); color:#fff; border-color:var(--azul); }
-  .depois h3, .depois li { color:#fff; }
-  .versus h3 { margin-bottom:16px; font-size:17px; }
-  .versus ul { margin:0; padding-left:20px; }
+  .versus { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:46px; }
+  .versus > div { border-radius:15px; padding:30px; border:1px solid var(--borda); }
+  .antes { background:var(--painel); }
+  .antes h3 { color:var(--tinta-fraca); }
+  .depois { background:linear-gradient(160deg,#12306e,#0d1f4a); border-color:var(--azul); }
+  .versus h3 { margin-bottom:17px; font-size:16px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.08em; text-transform:uppercase; }
+  .versus ul { margin:0; padding-left:19px; }
   .versus li { margin-bottom:11px; font-size:16px; color:var(--tinta-fraca); }
-  .depois li { color:#dbeafe; }
+  .depois li { color:#cbdcfa; }
+  .depois li::marker { color:var(--azul-vivo); }
 
   /* demonstracao do chat */
-  .telinha { background:var(--escuro); border-radius:17px; padding:26px; margin-top:44px; border:1px solid #2b3444; }
-  .bolha { max-width:76%; padding:13px 17px; border-radius:15px; margin-bottom:13px; font-size:16px; line-height:1.5; }
-  .bolha.eu { background:#2563eb; color:#fff; margin-left:auto; border-bottom-right-radius:5px; }
-  .bolha.ele { background:var(--escuro-painel); color:#e5e7eb; border-bottom-left-radius:5px; white-space:pre-line; }
-  .telinha .aviso { color:#9ca3af; font-size:13px; margin:18px 0 0; text-align:center; }
+  .telinha { background:var(--painel); border-radius:18px; padding:26px; margin-top:52px; border:1px solid var(--borda-forte); box-shadow:0 30px 80px -30px rgba(0,0,0,.9); }
+  .bolha { max-width:78%; padding:13px 17px; border-radius:15px; margin-bottom:13px; font-size:16px; line-height:1.5; }
+  .bolha.eu { background:var(--azul); color:#fff; margin-left:auto; border-bottom-right-radius:5px; }
+  .bolha.ele { background:var(--painel-alto); color:var(--tinta); border:1px solid var(--borda); border-bottom-left-radius:5px; white-space:pre-line; }
+  .telinha .aviso { color:var(--tinta-tenue); font-size:13px; margin:18px 0 0; text-align:center; }
 
   /* listas de exemplos */
-  .perguntas { display:flex; flex-wrap:wrap; gap:11px; margin-top:36px; }
-  .perguntas span { background:var(--papel); border:1px solid var(--linha); border-radius:100px; padding:11px 19px; font-size:16px; color:var(--tinta-fraca); }
-  section.papel .perguntas span { background:var(--fundo); }
+  .perguntas { display:flex; flex-wrap:wrap; gap:11px; margin-top:38px; }
+  .perguntas span { background:var(--painel-alto); border:1px solid var(--borda); border-radius:100px; padding:11px 19px; font-size:16px; color:var(--tinta-fraca); }
 
   /* integracoes */
-  .conecta { display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:18px; margin-top:40px; }
-  .conecta div { border:1px solid var(--linha); border-radius:13px; padding:20px 22px; background:var(--papel); }
-  section.papel .conecta div { background:var(--fundo); }
+  .conecta { display:grid; grid-template-columns:repeat(auto-fit,minmax(216px,1fr)); gap:16px; margin-top:42px; }
+  .conecta div { border:1px solid var(--borda); border-radius:13px; padding:20px 22px; background:var(--painel-alto); }
   .conecta strong { display:block; font-size:15px; margin-bottom:5px; }
   .conecta small { color:var(--tinta-fraca); font-size:14px; line-height:1.5; }
 
   /* seguranca */
-  .seguro { display:grid; gap:18px; margin-top:40px; }
+  .seguro { display:grid; gap:18px; margin-top:42px; }
   .seguro > div { display:flex; gap:16px; align-items:flex-start; }
-  .seguro .marca-v { flex:0 0 27px; height:27px; border-radius:50%; background:var(--verde-claro); color:var(--verde); display:grid; place-items:center; font-size:15px; font-weight:700; margin-top:2px; }
+  .seguro .marca-v { flex:0 0 26px; height:26px; border-radius:50%; background:var(--verde-fundo); color:var(--verde); display:grid; place-items:center; font-size:14px; font-weight:700; margin-top:3px; }
   .seguro strong { display:block; margin-bottom:3px; }
   .seguro p { margin:0; color:var(--tinta-fraca); font-size:16px; }
 
   /* fechamento */
-  .fecha { background:var(--escuro); color:#fff; text-align:center; }
-  .fecha h2 { color:#fff; }
-  .fecha .chamada { color:#9ca3af; margin:0 auto; }
+  .fecha { text-align:center; background:radial-gradient(ellipse 80% 100% at 50% 100%,#10224a 0%,var(--breu) 70%); }
+  .fecha .chamada { margin:0 auto; }
   .fecha .acoes { justify-content:center; }
+  .fecha .garantia { justify-content:center; }
 
-  .rodape { padding:36px 0; font-size:15px; color:var(--tinta-fraca); background:var(--papel); border-top:1px solid var(--linha); }
+  .rodape { padding:38px 0; font-size:15px; color:var(--tinta-tenue); border-top:1px solid var(--borda); }
   .rodape .env { display:flex; flex-wrap:wrap; gap:16px; align-items:center; }
   .rodape a { color:var(--tinta-fraca); }
   .rodape .dir { margin-left:auto; }
 
-  @media (max-width:860px) {
-    section { padding:64px 0; }
+  @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
+  @media (max-width:900px) {
+    section { padding:68px 0; }
+    .menu { display:none; }
     .g3, .g2, .versus { grid-template-columns:1fr; }
-    .bolha { max-width:92%; }
+    .bolha { max-width:93%; }
     .rodape .dir { margin-left:0; width:100%; }
   }
 </style></head>
@@ -205,22 +258,29 @@ export class LandingController {
 <header class="topo">
   <div class="env">
     <div class="marca">__LOGO__ Kyrius</div>
+    <nav class="menu">
+      <a href="#diferenca">A diferença</a>
+      <a href="#conecta">Integrações</a>
+      <a href="#seguranca">Segurança</a>
+    </nav>
+    <!--CTA_TOPO-->
   </div>
 </header>
 
 <!-- ABERTURA -->
-<section>
+<section class="malha">
   <div class="env">
-    <span class="rotulo">Assistente de IA para a sua empresa</span>
+    <span class="publico">[ Para donos de pequenas e médias empresas ]</span>
     <h1>Pergunte em português.<br/>Sem abrir sistema nenhum.</h1>
-    <p class="chamada">
-      Quem está devendo, o que vence essa semana, o que aconteceu no CRM.
-      Você escreve como falaria com um funcionário, e a resposta vem em
-      segundos — do celular ou do computador.
+    <p class="triade">
+      <span>Sem trocar de ferramenta.</span>
+      <span>Sem treinar a equipe.</span>
+      <span>Sem esperar relatório.</span>
     </p>
     <div class="acoes">
       <!--CTA-->
     </div>
+    <p class="garantia"><span class="tique">✓</span> Configuração em 40 minutos, feita junto com você. Sem instalar nada.</p>
 
     <div class="telinha">
       <div class="bolha eu">quem está com boleto vencido?</div>
@@ -243,7 +303,7 @@ Confirma o envio?</div>
 </section>
 
 <!-- PROBLEMA -->
-<section class="papel">
+<section class="painel">
   <div class="env estreito">
     <h2>A informação existe. Ela só está espalhada.</h2>
     <p class="chamada">
@@ -269,9 +329,9 @@ Confirma o envio?</div>
 </section>
 
 <!-- DIFERENCIAL -->
-<section>
+<section id="diferenca">
   <div class="env">
-    <span class="rotulo">O que muda</span>
+    <span class="rotulo">[ O que muda ]</span>
     <h2>Não é automação. É alguém que entende o pedido.</h2>
     <p class="chamada">
       Ferramentas de automação executam um caminho que você configurou antes.
@@ -314,7 +374,7 @@ Confirma o envio?</div>
 </section>
 
 <!-- EXEMPLOS -->
-<section class="papel">
+<section class="painel">
   <div class="env">
     <h2>Coisas que você pode perguntar</h2>
     <p class="chamada">Sem comando, sem menu, sem treinamento. Escreva como escreveria para uma pessoa.</p>
@@ -338,7 +398,7 @@ Confirma o envio?</div>
 <!-- PROATIVO -->
 <section>
   <div class="env">
-    <span class="rotulo">Trabalha sem você pedir</span>
+    <span class="rotulo">[ Trabalha sem você pedir ]</span>
     <h2>Nem toda resposta deveria depender da pergunta.</h2>
     <div class="grade g2">
       <div class="cartao">
@@ -354,7 +414,7 @@ Confirma o envio?</div>
 </section>
 
 <!-- INTEGRACOES -->
-<section class="papel">
+<section id="conecta" class="painel">
   <div class="env">
     <h2>Conecta no que você já usa</h2>
     <p class="chamada">
@@ -376,9 +436,9 @@ Confirma o envio?</div>
 </section>
 
 <!-- SEGURANCA -->
-<section>
+<section id="seguranca">
   <div class="env estreito">
-    <span class="rotulo">Segurança</span>
+    <span class="rotulo">[ Segurança ]</span>
     <h2>Você está confiando dados financeiros. Isso pesa.</h2>
     <p class="chamada">
       Não dá para pedir acesso ao seu CRM e ao seu financeiro e tratar
@@ -425,7 +485,7 @@ Confirma o envio?</div>
 </section>
 
 <!-- COMO COMECA -->
-<section class="papel">
+<section class="painel">
   <div class="env">
     <h2>Como começa</h2>
     <div class="grade g3">
@@ -446,7 +506,7 @@ Confirma o envio?</div>
 </section>
 
 <!-- FECHAMENTO -->
-<section class="fecha">
+<section class="fecha linhada">
   <div class="env estreito">
     <h2>Veja funcionando com os seus dados</h2>
     <p class="chamada">
@@ -456,6 +516,7 @@ Confirma o envio?</div>
     <div class="acoes">
       <!--CTA-->
     </div>
+    <p class="garantia"><span class="tique">✓</span> Sem contrato de fidelidade. Sem cartão de crédito para conversar.</p>
   </div>
 </section>
 
