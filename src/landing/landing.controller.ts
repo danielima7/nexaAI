@@ -44,7 +44,7 @@ export class LandingController {
       // Canal COMERCIAL, nao o de suporte: quem chega pela pagina publica esta
       // pedindo demonstracao, nao socorro.
       const zap = this.suporte.linkComercial(
-        'Olá! Vi o site do Kyrius e queria agendar uma demonstração.',
+        'Quero saber mais sobre a Kyrius',
       );
       const email =
         this.config.get<string>('KYRIUS_CONTATO_EMAIL') ??
@@ -58,11 +58,11 @@ export class LandingController {
 
       this.paginaCache = LandingController.HTML.replace(
         /<!--CTA-->/g,
-        `<a class="btn btn-primario" ${destino}>Agendar uma demonstração <span aria-hidden="true">&rarr;</span></a>`,
+        `<a class="btn btn-primario" ${destino}>Conheça agora <span aria-hidden="true">&rarr;</span></a>`,
       )
         .replace(
           /<!--CTA_TOPO-->/g,
-          `<a class="btn btn-topo" ${destino}>Agendar demonstração</a>`,
+          `<a class="btn btn-topo" ${destino}>Conheça agora</a>`,
         )
         .replace(/<!--EMAIL-->/g, email);
     }
@@ -271,7 +271,7 @@ export class LandingController {
 <section class="malha">
   <div class="env">
     <span class="publico">[ Para donos de pequenas e médias empresas ]</span>
-    <h1>Pergunte em português.<br/>Sem abrir sistema nenhum.</h1>
+    <h1>Plataforma de soluções de inteligência artificial para sua empresa</h1>
     <p class="triade">
       <span>Sem trocar de ferramenta.</span>
       <span>Sem treinar a equipe.</span>
@@ -279,25 +279,6 @@ export class LandingController {
     </p>
     <div class="acoes">
       <!--CTA-->
-    </div>
-    <p class="garantia"><span class="tique">✓</span> Configuração em 40 minutos, feita junto com você. Sem instalar nada.</p>
-
-    <div class="telinha">
-      <div class="bolha eu">quem está com boleto vencido?</div>
-      <div class="bolha ele">Você tem 4 clientes em atraso, somando R$ 8.430,00:
-
-• Comercial Souza — R$ 3.200,00 (12 dias)
-• Mercearia Boa Vista — R$ 2.780,00 (8 dias)
-• J. Ferreira ME — R$ 1.650,00 (5 dias)
-• Auto Peças Lima — R$ 800,00 (2 dias)
-
-O Comercial Souza é o mais antigo e o maior valor.</div>
-      <div class="bolha eu">manda um e-mail de cobrança pro Souza</div>
-      <div class="bolha ele">Vou enviar para financeiro@comercialsouza.com.br
-lembrando do boleto de R$ 3.200,00, vencido há 12 dias.
-
-Confirma o envio?</div>
-      <p class="aviso">Exemplo ilustrativo. Nada é enviado ou alterado sem a sua confirmação.</p>
     </div>
   </div>
 </section>
@@ -391,6 +372,34 @@ Confirma o envio?</div>
       <span>Manda um e-mail pro contador</span>
       <span>Marca reunião sexta às 14h</span>
       <span>O que você fez por mim essa semana?</span>
+    </div>
+  </div>
+</section>
+
+<!-- DEMONSTRACAO -->
+<!-- Fica depois dos exemplos, e nao no topo: primeiro o leitor entende o que
+     pode perguntar, depois ve como a resposta chega. No hero, a conversa
+     aparecia antes de existir a pergunta que ela responde. -->
+<section>
+  <div class="env estreito">
+    <span class="rotulo">[ Como é na prática ]</span>
+    <h2>Uma conversa, não uma tela de sistema.</h2>
+    <div class="telinha">
+      <div class="bolha eu">quem está com boleto vencido?</div>
+      <div class="bolha ele">Você tem 4 clientes em atraso, somando R$ 8.430,00:
+
+• Comercial Souza — R$ 3.200,00 (12 dias)
+• Mercearia Boa Vista — R$ 2.780,00 (8 dias)
+• J. Ferreira ME — R$ 1.650,00 (5 dias)
+• Auto Peças Lima — R$ 800,00 (2 dias)
+
+O Comercial Souza é o mais antigo e o maior valor.</div>
+      <div class="bolha eu">manda um e-mail de cobrança pro Souza</div>
+      <div class="bolha ele">Vou enviar para financeiro@comercialsouza.com.br
+lembrando do boleto de R$ 3.200,00, vencido há 12 dias.
+
+Confirma o envio?</div>
+      <p class="aviso">Exemplo ilustrativo. Nada é enviado ou alterado sem a sua confirmação.</p>
     </div>
   </div>
 </section>
