@@ -15,6 +15,16 @@ describe('SuporteService (link de WhatsApp)', () => {
       get: () => valor,
     } as unknown as ConfigService);
 
+  /** Config com numeros distintos para suporte e comercial. */
+  const criarDois = (
+    suporte?: string,
+    comercial?: string,
+  ): SuporteService =>
+    new SuporteService({
+      get: (chave: string) =>
+        chave === 'KYRIUS_COMERCIAL_WHATSAPP' ? comercial : suporte,
+    } as unknown as ConfigService);
+
   describe('quando nao ha numero utilizavel', () => {
     it.each([
       ['ausente', undefined],
@@ -57,6 +67,29 @@ describe('SuporteService (link de WhatsApp)', () => {
       expect(url).toContain('%26'); // &
       expect(url).toContain('%3F'); // ?
       expect(url).toContain('%23'); // #
+    });
+  });
+
+  describe('canal comercial (botoes da pagina publica)', () => {
+    it('usa o numero proprio, separado do suporte', () => {
+      const s = criarDois('5524993134184', '5524992987571');
+      expect(s.linkComercial()).toBe('https://wa.me/5524992987571');
+      expect(s.link()).toBe('https://wa.me/5524993134184');
+    });
+
+    it('sem numero proprio, cai no de suporte: atender pelo canal errado e melhor que nao atender', () => {
+      const s = criarDois('5524993134184', undefined);
+      expect(s.linkComercial()).toBe('https://wa.me/5524993134184');
+    });
+
+    it('o rodape de e-mail continua no numero de SUPORTE, nao no comercial', () => {
+      const s = criarDois('5524993134184', '5524992987571');
+      expect(s.rodapeEmail()).toContain('5524993134184');
+      expect(s.rodapeEmail()).not.toContain('5524992987571');
+    });
+
+    it('sem numero nenhum, nao ha link comercial', () => {
+      expect(criarDois(undefined, undefined).linkComercial()).toBeUndefined();
     });
   });
 

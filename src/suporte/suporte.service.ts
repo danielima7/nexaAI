@@ -18,19 +18,40 @@ import { ConfigService } from '@nestjs/config';
 export class SuporteService {
   private readonly logger = new Logger(SuporteService.name);
 
-  /** Numero em formato internacional, so digitos. Ausente = suporte oculto. */
+  /** Atendimento a quem JA e cliente: chat e avisos por e-mail. */
   private readonly numero?: string;
+
+  /**
+   * Prospeccao: os botoes da pagina publica.
+   *
+   * Separado do suporte porque sao conversas diferentes — quem pede
+   * demonstracao nao deveria cair na mesma fila de quem esta com o sistema
+   * parado, e o dia em que houver alguem so para vendas, muda a variavel e
+   * nada mais. Sem valor proprio, cai no numero de suporte: melhor atender
+   * pelo canal errado do que nao atender.
+   */
+  private readonly numeroComercial?: string;
 
   constructor(config: ConfigService) {
     this.numero = SuporteService.normalizar(
       config.get<string>('KYRIUS_SUPORTE_WHATSAPP'),
     );
+    this.numeroComercial =
+      SuporteService.normalizar(
+        config.get<string>('KYRIUS_COMERCIAL_WHATSAPP'),
+      ) ?? this.numero;
 
     if (this.numero) {
       this.logger.log(`Suporte por WhatsApp ativo (${this.numero}).`);
     } else {
       this.logger.warn(
         'KYRIUS_SUPORTE_WHATSAPP nao configurado — o botao de suporte fica oculto.',
+      );
+    }
+
+    if (this.numeroComercial && this.numeroComercial !== this.numero) {
+      this.logger.log(
+        `Contato comercial por WhatsApp ativo (${this.numeroComercial}).`,
       );
     }
   }
@@ -71,9 +92,21 @@ export class SuporteService {
    *   explicar de onde veio, e nos diz de qual tela ele saiu.
    */
   link(mensagem?: string): string | undefined {
-    if (!this.numero) return undefined;
+    return SuporteService.montar(this.numero, mensagem);
+  }
 
-    const base = `https://wa.me/${this.numero}`;
+  /** Link do canal COMERCIAL (pagina publica), ou undefined se nao houver. */
+  linkComercial(mensagem?: string): string | undefined {
+    return SuporteService.montar(this.numeroComercial, mensagem);
+  }
+
+  private static montar(
+    numero: string | undefined,
+    mensagem?: string,
+  ): string | undefined {
+    if (!numero) return undefined;
+
+    const base = `https://wa.me/${numero}`;
     return mensagem ? `${base}?text=${encodeURIComponent(mensagem)}` : base;
   }
 

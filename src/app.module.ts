@@ -20,6 +20,7 @@ import { ReportsModule } from './reports/reports.module';
 import { HealthController } from './health/health.controller';
 import { UploadsModule } from './uploads/uploads.module';
 import { SuporteModule } from './suporte/suporte.module';
+import { LandingModule } from './landing/landing.module';
 
 @Module({
   imports: [
@@ -52,6 +53,8 @@ import { SuporteModule } from './suporte/suporte.module';
     PluggyModule,
     InstagramModule,
     ChatModule,
+    // Pagina publica de apresentacao (raiz do dominio)
+    LandingModule,
     // Planilhas enviadas pelo cliente no chat
     UploadsModule,
     // Resumo diario proativo (depende de AiModule + WhatsappModule)
