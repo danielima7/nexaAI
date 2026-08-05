@@ -32,6 +32,21 @@ model Organization {
   /// escrita pede confirmacao — so a resposta da integracao e inventada.
   demo Boolean @default(false)
 
+  /// Criada pelo proprio visitante em /criar-conta, sem convite.
+  ///
+  /// Registrado para voce conseguir separar, no painel e no banco, quem entrou
+  /// por indicacao sua de quem apareceu sozinho — sao funis diferentes e
+  /// merecem tratamento comercial diferente.
+  autocadastro Boolean @default(false)
+
+  /// Teto de mensagens que esta organizacao pode enviar no chat.
+  ///
+  /// `null` = sem teto (todo cliente que voce cadastra por convite). Contas de
+  /// autocadastro nascem com o limite de KYRIUS_AUTOCADASTRO_LIMITE, porque a
+  /// rota e publica: sem teto, quem descobrisse a URL gastaria a chave da
+  /// Anthropic ate o credito acabar, e a conta so apareceria na fatura.
+  limiteInteracoes Int?
+
   users User[]
 }
 
@@ -75,7 +90,14 @@ model Invite {
   id             String    @id @default(uuid())
   /// SHA-256 do token enviado no link.
   tokenHash      String    @unique
-  email          String
+  /// Destinatario do convite.
+  ///
+  /// Preenchido = convite DIRECIONADO: a tela mostra o e-mail travado e a
+  /// conta so pode nascer com ele. Vazio = convite ABERTO: quem abrir o link
+  /// digita o proprio e-mail. O aberto e mais comodo para mandar por WhatsApp
+  /// sem saber o endereco da pessoa; o direcionado e mais seguro, porque o
+  /// link so serve para quem voce escolheu. Os dois continuam de uso unico.
+  email          String?
   /// Organizacao de destino. Null = criar uma nova ao aceitar.
   organizationId String?
   /// Nome da empresa, usado quando o convite cria a organizacao.

@@ -116,9 +116,35 @@ navegador deve estar valido.
   autorizados. Sem isso o Google devolve `redirect_uri_mismatch`.
 - **Reconecte o Google** pelo chat (`kyrius_conectar_google`): o refresh token
   antigo foi emitido para a URI do ngrok.
-- **Crie o acesso ao chat**: `docker compose -f docker-compose.prod.yml exec app npm run chat:acesso`
+- **Crie o acesso ao chat**: veja *Operação → Dar acesso a um cliente*, abaixo.
 
 ## Operacao
+
+> ⚠️ **No servidor, use os scripts `prod:*`, nao os de desenvolvimento.**
+> Os scripts `chat:convite`, `chat:acesso`, `demo:criar` e `credenciais:cifrar`
+> rodam com `ts-node`, que e devDependency e **nao existe na imagem de
+> producao** (ela roda `npm ci --omit=dev` e nem copia o `src/`). Os `prod:*`
+> executam o JavaScript ja compilado em `dist/` e funcionam no container.
+
+### Dar acesso a um cliente
+
+Gera um link de convite. O cliente abre, escolhe a propria senha e ja entra —
+voce nunca manuseia a senha dele.
+
+```bash
+# Cliente novo (cria a organizacao junto)
+docker compose -f docker-compose.prod.yml exec app \
+  npm run prod:convite -- --email dono@empresa.com --empresa "Nome da Empresa"
+
+# Pessoa a mais numa organizacao que ja existe
+docker compose -f docker-compose.prod.yml exec app \
+  npm run prod:convite -- --email outro@empresa.com --org <uuid-da-org>
+```
+
+O comando imprime o link. Copie e envie ao cliente. Vale **uma unica vez** e
+expira em 7 dias.
+
+### Rotina
 
 ```bash
 # Atualizar para a ultima versao
@@ -128,8 +154,27 @@ docker compose -f docker-compose.prod.yml exec app npx prisma migrate deploy
 # Logs da aplicacao
 docker compose -f docker-compose.prod.yml logs -f app
 
-# Backup (grava em ./backups, montado no container do Postgres)
-docker compose -f docker-compose.prod.yml exec app npm run banco:backup
+# Organizacao de demonstracao (para apresentar sem expor dados de ninguem)
+docker compose -f docker-compose.prod.yml exec app npm run prod:demo
+```
+
+### Backup — roda no HOST, nao dentro do container
+
+O script `banco:backup` chama `docker exec`, que nao existe dentro do
+container da aplicacao. Em producao, extraia direto do servico do Postgres:
+
+```bash
+mkdir -p backups
+docker compose -f docker-compose.prod.yml exec -T postgres \
+  pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" > "backups/kyrius-$(date +%F-%H%M).sql"
+```
+
+Para automatizar, coloque no crontab do servidor (`crontab -e`), diariamente
+as 3h — e **copie o arquivo para fora da VPS**, senao o backup morre junto com
+ela:
+
+```
+0 3 * * * cd /home/kyrius/kyrius && docker compose -f docker-compose.prod.yml exec -T postgres pg_dump -U nexa -d nexa > backups/kyrius-$(date +\\%F).sql
 ```
 
 **Backup e responsabilidade sua, nao da Hetzner.** Snapshot de VPS protege

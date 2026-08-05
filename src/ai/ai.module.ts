@@ -19,6 +19,9 @@ import { AiUsageService } from './ai-usage.service';
     ModelRouterService,
     AiUsageService,
   ],
-  exports: [AiService, ConversationMemoryService],
+  // AiUsageService e exportado porque o chat precisa consultar a cota antes de
+  // chamar a IA. ModelRouterService segue interno: quem chama escolhe a ROTA,
+  // nunca o modelo.
+  exports: [AiService, ConversationMemoryService, AiUsageService],
 })
 export class AiModule {}

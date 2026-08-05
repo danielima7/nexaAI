@@ -25,6 +25,23 @@ export class AiUsageService {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Quantas mensagens a organizacao ja enviou no chat.
+   *
+   * Conta apenas `rodada: 0` — a primeira chamada de cada turno. Um turno
+   * pode gerar varias chamadas a API (o loop de tool use), e cobrar do
+   * cliente por rodadas internas seria puni-lo por a pergunta dele ter
+   * exigido tres ferramentas em vez de uma.
+   *
+   * Restrito a rota `chat` de proposito: resumo diario e alertas sao
+   * disparados por nos, nao por ele, e nao devem consumir a cota dele.
+   */
+  async contarInteracoes(organizationId: string): Promise<number> {
+    return this.prisma.aiUsage.count({
+      where: { organizationId, rota: 'chat', rodada: 0 },
+    });
+  }
+
   async registrar(escopo: EscopoUso, usage: Anthropic.Usage): Promise<void> {
     try {
       await this.prisma.aiUsage.create({

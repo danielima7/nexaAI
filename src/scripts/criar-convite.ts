@@ -30,12 +30,28 @@ async function main(): Promise<void> {
   const convites = new InviteService(prisma as any, config, contas);
 
   try {
+    // Sem --email o convite nasce ABERTO: quem receber o link informa o
+    // proprio endereco. Comodo para mandar por WhatsApp sem saber qual e-mail
+    // a pessoa usa — em troca, vale para qualquer um que receba o link.
     const email = arg('email');
-    if (!email) {
+    const aberto = arg('aberto') !== undefined || process.argv.includes('--aberto');
+
+    if (!email && !aberto) {
+      // A ajuda mostra as duas formas porque o comando muda conforme onde roda:
+      // no servidor nao existe ts-node (a imagem e --omit=dev), entao o script
+      // de desenvolvimento falharia justamente na hora de atender um cliente.
       console.error(
-        'ERRO: informe --email.\n\n' +
-          '  Empresa nova:      npm run chat:convite -- --email dono@empresa.com --empresa "Nome da Empresa"\n' +
-          '  Empresa existente: npm run chat:convite -- --email pessoa@empresa.com --org <uuid>',
+        'ERRO: informe --email OU --aberto.\n\n' +
+          '  Convite DIRECIONADO (o e-mail ja vem travado na tela):\n' +
+          '    --email dono@empresa.com --empresa "Nome da Empresa"\n\n' +
+          '  Convite ABERTO (quem receber o link digita o proprio e-mail):\n' +
+          '    --aberto --empresa "Nome da Empresa"\n\n' +
+          '  Para adicionar alguem a uma empresa existente, troque --empresa por --org <uuid>.\n\n' +
+          '  No seu computador (desenvolvimento):\n' +
+          '    npm run chat:convite -- --aberto --empresa "Nome"\n\n' +
+          '  No servidor (producao):\n' +
+          '    docker compose -f docker-compose.prod.yml exec app \\\n' +
+          '      npm run prod:convite -- --aberto --empresa "Nome"',
       );
       process.exit(1);
     }
@@ -68,7 +84,11 @@ async function main(): Promise<void> {
     });
 
     console.log('\n✅ Convite criado\n');
-    console.log(`   para:   ${email}`);
+    console.log(
+      email
+        ? `   para:   ${email}`
+        : '   tipo:   ABERTO — quem abrir o link informa o proprio e-mail',
+    );
     console.log(`   validade: ${expiresAt.toLocaleString('pt-BR')}`);
     console.log(`\n   ${link}\n`);
     console.log('   Envie este link ao cliente. Ele escolhe a propria senha e');

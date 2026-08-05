@@ -15,7 +15,11 @@
     "demo:criar": "ts-node src/scripts/criar-demo.ts",
     "test": "jest",
     "test:watch": "jest --watch",
-    "modelo:avaliar": "ts-node src/scripts/avaliar-modelo.ts"
+    "modelo:avaliar": "ts-node src/scripts/avaliar-modelo.ts",
+    "prod:convite": "node dist/scripts/criar-convite.js",
+    "prod:acesso": "node dist/scripts/criar-acesso-chat.js",
+    "prod:demo": "node dist/scripts/criar-demo.js",
+    "prod:cifrar": "node dist/scripts/criptografar-conexoes.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.112.1",

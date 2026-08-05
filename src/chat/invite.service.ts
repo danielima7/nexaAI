@@ -7,7 +7,8 @@ import { ChatAccountService } from './chat-account.service';
 /** Convite validado, pronto para ser exibido na tela de aceite. */
 export interface ConviteValido {
   id: string;
-  email: string;
+  /** `null` em convite ABERTO — a tela pede o e-mail ao cliente. */
+  email: string | null;
   organizationId: string | null;
   companyName: string | null;
 }
@@ -41,6 +42,13 @@ export class InviteService {
   /** Tamanho minimo da senha escolhida pelo cliente. */
   static readonly SENHA_MINIMA = 8;
 
+  /**
+   * Formato aceito de e-mail. Proposital ser permissivo: a validacao rigorosa
+   * de e-mail e impossivel por regex e recusar um endereco valido custa um
+   * cliente. Basta impedir entrada obviamente quebrada.
+   */
+  private static readonly FORMATO_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
@@ -63,19 +71,32 @@ export class InviteService {
    * Cria um convite e devolve o token em claro — esta e a UNICA vez que ele
    * existe fora do link. Informe `organizationId` para adicionar alguem a uma
    * empresa existente, ou `companyName` para criar uma empresa nova no aceite.
+   *
+   * Sem `email`, o convite nasce ABERTO: quem abrir o link informa o proprio
+   * endereco. Util para mandar por WhatsApp sem saber qual e-mail a pessoa
+   * usa — em troca, o link serve para qualquer um que o receba.
    */
   async criar(params: {
-    email: string;
+    email?: string;
     companyName?: string;
     organizationId?: string;
   }): Promise<{ token: string; link: string; expiresAt: Date }> {
-    const email = this.contas.normalizarEmail(params.email);
+    const email = params.email
+      ? this.contas.normalizarEmail(params.email)
+      : null;
 
-    const jaExiste = await this.contas.buscarPorEmail(email);
-    if (jaExiste) {
-      throw new Error(
-        `Ja existe um acesso para ${email}. Use o script de acesso para trocar a senha.`,
-      );
+    if (email) {
+      if (!InviteService.FORMATO_EMAIL.test(email)) {
+        throw new Error(`E-mail invalido: ${email}`);
+      }
+      // So da para conferir agora quando o e-mail ja e conhecido. No convite
+      // aberto, a checagem acontece no aceite.
+      const jaExiste = await this.contas.buscarPorEmail(email);
+      if (jaExiste) {
+        throw new Error(
+          `Ja existe um acesso para ${email}. Use o script de acesso para trocar a senha.`,
+        );
+      }
     }
 
     const token = randomBytes(32).toString('base64url');
@@ -92,7 +113,9 @@ export class InviteService {
       },
     });
 
-    this.logger.log(`Convite criado para ${email}.`);
+    this.logger.log(
+      email ? `Convite criado para ${email}.` : 'Convite aberto criado.',
+    );
     return { token, link: this.linkDe(token), expiresAt };
   }
 
@@ -124,7 +147,7 @@ export class InviteService {
    */
   async aceitar(
     token: string,
-    dados: { senha: string; nome?: string },
+    dados: { senha: string; nome?: string; email?: string },
   ): Promise<ConviteAceito> {
     const convite = await this.validar(token);
     if (!convite) throw new Error('Convite invalido, expirado ou ja utilizado.');
@@ -135,6 +158,11 @@ export class InviteService {
       );
     }
 
+    // O e-mail do CONVITE tem precedencia absoluta sobre o que vem do
+    // navegador. Sem isso, um convite direcionado a uma pessoa poderia ser
+    // usado para abrir conta com outro endereco — bastaria editar o campo no
+    // DevTools. O cliente so escolhe o e-mail quando o convite e aberto.
+    const email = convite.email ?? this.normalizarEmailInformado(dados.email);
     const passwordHash = this.contas.gerarHash(dados.senha);
 
     return this.prisma.$transaction(async (tx) => {
@@ -145,10 +173,21 @@ export class InviteService {
         throw new Error('Convite invalido, expirado ou ja utilizado.');
       }
 
+      // Em convite aberto, o e-mail so aparece agora — a unicidade precisa ser
+      // conferida DENTRO da transacao. Fora dela, dois aceites simultaneos
+      // passariam pela checagem e o segundo estouraria com erro de banco, que
+      // o cliente veria como falha generica.
+      const ocupado = await tx.user.findUnique({ where: { email } });
+      if (ocupado) {
+        throw new Error(
+          `Ja existe uma conta com o e-mail ${email}. Faca login em vez de criar outra.`,
+        );
+      }
+
       let organizationId = convite.organizationId;
       if (!organizationId) {
         const org = await tx.organization.create({
-          data: { name: convite.companyName ?? convite.email },
+          data: { name: convite.companyName ?? email },
         });
         organizationId = org.id;
       }
@@ -156,7 +195,7 @@ export class InviteService {
       const user = await tx.user.create({
         data: {
           organizationId,
-          email: convite.email,
+          email,
           passwordHash,
           name: dados.nome?.trim() || null,
         },
@@ -168,9 +207,19 @@ export class InviteService {
       });
 
       this.logger.log(
-        `Convite aceito por ${convite.email}: org ${organizationId}, user ${user.id}.`,
+        `Convite aceito por ${email}: org ${organizationId}, user ${user.id}.`,
       );
       return { userId: user.id, organizationId, nome: user.name };
     });
+  }
+
+  /** Valida e normaliza o e-mail digitado pelo cliente no convite aberto. */
+  private normalizarEmailInformado(bruto?: string): string {
+    const email = this.contas.normalizarEmail(bruto ?? '');
+    if (!email) throw new Error('Informe o seu e-mail.');
+    if (!InviteService.FORMATO_EMAIL.test(email)) {
+      throw new Error('E-mail invalido. Confira e tente de novo.');
+    }
+    return email;
   }
 }

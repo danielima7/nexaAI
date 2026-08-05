@@ -36,7 +36,7 @@ export class InviteController {
   @Get('info')
   async info(
     @Query('token') token: string,
-  ): Promise<{ email: string; empresa: string | null }> {
+  ): Promise<{ email: string | null; empresa: string | null }> {
     const convite = await this.convites.validar(token);
     if (!convite) {
       throw new HttpException(
@@ -44,6 +44,8 @@ export class InviteController {
         HttpStatus.NOT_FOUND,
       );
     }
+    // `email: null` sinaliza convite ABERTO — a pagina libera o campo para o
+    // cliente digitar o proprio endereco.
     return { email: convite.email, empresa: convite.companyName };
   }
 
@@ -51,7 +53,7 @@ export class InviteController {
   @Post('aceitar')
   @HttpCode(HttpStatus.OK)
   async aceitar(
-    @Body() body: { token?: string; senha?: string; nome?: string },
+    @Body() body: { token?: string; senha?: string; nome?: string; email?: string },
     @Req() req: Request,
   ): Promise<{ token: string; nome: string | null }> {
     // O convite ja e um segredo forte, mas o limite de tentativas protege
@@ -71,6 +73,9 @@ export class InviteController {
       const aceito = await this.convites.aceitar(body.token, {
         senha: body.senha ?? '',
         nome: body.nome,
+        // Usado apenas em convite aberto; num convite direcionado o servico
+        // descarta este valor e mantem o e-mail do proprio convite.
+        email: body.email,
       });
 
       return {
@@ -140,7 +145,7 @@ export class InviteController {
       <p class="sub" id="apresentacao"></p>
 
       <label for="email">E-mail</label>
-      <input id="email" type="email" disabled />
+      <input id="email" type="email" disabled autocomplete="username" placeholder="voce@suaempresa.com.br" />
 
       <label for="nome">Seu nome</label>
       <input id="nome" type="text" placeholder="Como devemos te chamar" autocomplete="name" />
@@ -181,13 +186,22 @@ export class InviteController {
       const r = await fetch('/convite/info?token=' + encodeURIComponent(token));
       if (!r.ok) return mostrarInvalido();
       const dados = await r.json();
-      email.value = dados.email;
-      apresentacao.textContent = dados.empresa
-        ? 'Voce foi convidado para usar o Kyrius na ' + dados.empresa + '. Escolha uma senha para entrar.'
-        : 'Escolha uma senha para entrar.';
+
+      // Convite ABERTO (email nulo): o cliente informa o proprio endereco.
+      // Convite DIRECIONADO: campo preenchido e travado, para deixar claro
+      // que aquele acesso e daquela pessoa.
+      const aberto = !dados.email;
+      email.value = dados.email || '';
+      email.disabled = !aberto;
+
+      const naEmpresa = dados.empresa ? ' na ' + dados.empresa : '';
+      apresentacao.textContent = aberto
+        ? 'Voce foi convidado para usar o Kyrius' + naEmpresa + '. Informe seu e-mail e escolha uma senha.'
+        : 'Voce foi convidado para usar o Kyrius' + naEmpresa + '. Escolha uma senha para entrar.';
+
       carregando.classList.add('oculto');
       formulario.classList.remove('oculto');
-      nome.focus();
+      (aberto ? email : nome).focus();
     } catch (e) {
       mostrarInvalido();
     }
@@ -197,6 +211,13 @@ export class InviteController {
     e.preventDefault();
     erro.textContent = '';
 
+    // Conferencia local so para dar retorno imediato — quem decide e o
+    // servidor, que revalida tudo.
+    if (!email.disabled && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email.value.trim())) {
+      erro.textContent = 'Informe um e-mail valido.';
+      email.focus();
+      return;
+    }
     if (senha.value.length < 8) {
       erro.textContent = 'A senha precisa ter ao menos 8 caracteres.';
       return;
@@ -210,7 +231,7 @@ export class InviteController {
     try {
       const r = await fetch('/convite/aceitar', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ token, senha: senha.value, nome: nome.value })
+        body: JSON.stringify({ token, senha: senha.value, nome: nome.value, email: email.value.trim() })
       });
       const dados = await r.json().catch(() => ({}));
       if (!r.ok) {

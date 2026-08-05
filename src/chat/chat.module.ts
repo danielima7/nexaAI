@@ -4,6 +4,8 @@ import { InviteController } from './invite.controller';
 import { ChatAuthService } from './chat-auth.service';
 import { ChatAccountService } from './chat-account.service';
 import { InviteService } from './invite.service';
+import { SignupController } from './signup.controller';
+import { SignupService } from './signup.service';
 import { AiModule } from '../ai/ai.module';
 import { UploadsModule } from '../uploads/uploads.module';
 
@@ -14,8 +16,8 @@ import { UploadsModule } from '../uploads/uploads.module';
  */
 @Module({
   imports: [AiModule, UploadsModule],
-  controllers: [ChatController, InviteController],
-  providers: [ChatAuthService, ChatAccountService, InviteService],
+  controllers: [ChatController, InviteController, SignupController],
+  providers: [ChatAuthService, ChatAccountService, InviteService, SignupService],
   // ChatAuthService e exportado para a tela de integracoes reaproveitar a
   // mesma sessao do chat, sem exigir um segundo login.
   exports: [ChatAccountService, InviteService, ChatAuthService],
