@@ -369,6 +369,15 @@ export class ChatController {
   #login button { padding:12px; }
   #erro { color:var(--erro); font-size:13px; min-height:18px; margin-top:10px; }
   .oculto { display:none !important; }
+  /* Rodape institucional. Discreto de proposito: o chat e uma ferramenta de
+     trabalho, nao um documento — os links precisam existir (o cliente aceita
+     termos ao usar o servico) sem competir com a conversa. */
+  .legais { display:flex; flex-wrap:wrap; justify-content:center; gap:6px 18px;
+            padding:0 16px 14px; max-width:820px; width:100%; margin:0 auto; }
+  .legais a { color:#6b7a91; font-size:12.5px; text-decoration:none; }
+  .legais a:hover { color:var(--muted); text-decoration:underline; }
+  .legais a:focus-visible { outline:2px solid var(--accent); outline-offset:2px; border-radius:3px; }
+  #login .legais { padding:20px 0 0; margin-top:18px; border-top:1px solid #1f2937; }
 </style></head>
 <body>
   <div id="login">
@@ -381,6 +390,12 @@ export class ChatController {
         <button type="submit">Entrar</button>
       </form>
       <div id="erro"></div>
+      <nav class="legais" aria-label="Documentos institucionais">
+        <a href="/privacidade">Privacidade</a>
+        <a href="/termos">Termos</a>
+        <a href="/seguranca">Segurança</a>
+        <a href="/acessibilidade">Acessibilidade</a>
+      </nav>
     </div>
   </div>
 
@@ -400,6 +415,13 @@ export class ChatController {
     <input id="input" placeholder="Escreva uma mensagem..." autocomplete="off" />
     <button id="send" type="submit">Enviar</button>
   </form>
+
+  <nav class="legais oculto" id="legais" aria-label="Documentos institucionais">
+    <a href="/privacidade">Privacidade</a>
+    <a href="/termos">Termos</a>
+    <a href="/seguranca">Segurança</a>
+    <a href="/acessibilidade">Acessibilidade</a>
+  </nav>
 
 <script>
   const sessionId = localStorage.getItem('kyrius_session') || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));

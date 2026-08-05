@@ -243,6 +243,10 @@ export class LandingController {
   .rodape .env { display:flex; flex-wrap:wrap; gap:16px; align-items:center; }
   .rodape a { color:var(--tinta-fraca); }
   .rodape .dir { margin-left:auto; }
+  .legais { display:flex; flex-wrap:wrap; gap:8px 22px; margin-top:22px; padding-top:22px;
+            border-top:1px solid var(--borda); width:100%; }
+  .legais a { color:var(--tinta-tenue); text-decoration:none; font-size:14.5px; }
+  .legais a:hover { color:var(--tinta-fraca); }
 
   @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
   @media (max-width:900px) {
@@ -534,6 +538,13 @@ Confirma o envio?</div>
     <div class="marca">__LOGO__ Kyrius</div>
     <a href="mailto:<!--EMAIL-->"><!--EMAIL--></a>
     <span class="dir">Assistente de IA para pequenas e médias empresas</span>
+
+    <nav class="legais" aria-label="Documentos institucionais">
+      <a href="/privacidade">Política de Privacidade</a>
+      <a href="/termos">Termos de Uso</a>
+      <a href="/seguranca">Segurança da Informação</a>
+      <a href="/acessibilidade">Acessibilidade</a>
+    </nav>
   </div>
 </footer>
 

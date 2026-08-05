@@ -21,6 +21,7 @@ import { HealthController } from './health/health.controller';
 import { UploadsModule } from './uploads/uploads.module';
 import { SuporteModule } from './suporte/suporte.module';
 import { LandingModule } from './landing/landing.module';
+import { InstitucionalModule } from './institucional/institucional.module';
 
 @Module({
   imports: [
@@ -55,6 +56,8 @@ import { LandingModule } from './landing/landing.module';
     ChatModule,
     // Pagina publica de apresentacao (raiz do dominio)
     LandingModule,
+    // Privacidade, termos, seguranca e acessibilidade
+    InstitucionalModule,
     // Planilhas enviadas pelo cliente no chat
     UploadsModule,
     // Resumo diario proativo (depende de AiModule + WhatsappModule)
