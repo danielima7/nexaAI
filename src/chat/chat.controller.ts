@@ -433,6 +433,7 @@ export class ChatController {
   const senha = document.getElementById('senha');
   const erro = document.getElementById('erro');
   const cabecalho = document.getElementById('cabecalho');
+  const legais = document.getElementById('legais');
   const quem = document.getElementById('quem');
   const messages = document.getElementById('messages');
   const form = document.getElementById('form');
@@ -444,7 +445,7 @@ export class ChatController {
 
   function mostrarChat() {
     login.classList.add('oculto');
-    [cabecalho, messages, form].forEach(el => el.classList.remove('oculto'));
+    [cabecalho, messages, form, legais].forEach(el => el.classList.remove('oculto'));
     const nome = localStorage.getItem('kyrius_nome');
     if (nome) quem.textContent = '· ' + nome;
     if (!messages.hasChildNodes()) carregarInicio();
@@ -488,7 +489,7 @@ export class ChatController {
   function mostrarLogin(mensagem) {
     localStorage.removeItem('kyrius_token');
     login.classList.remove('oculto');
-    [cabecalho, messages, form].forEach(el => el.classList.add('oculto'));
+    [cabecalho, messages, form, legais].forEach(el => el.classList.add('oculto'));
     erro.textContent = mensagem || '';
     senha.value = '';
     (email.value ? senha : email).focus();
