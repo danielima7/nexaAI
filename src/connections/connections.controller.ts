@@ -138,7 +138,11 @@ export class ConnectionsController {
   * { box-sizing:border-box; }
   body { margin:0; font-family:-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
   header { padding:16px 20px; background:var(--panel); border-bottom:1px solid var(--linha); display:flex; align-items:center; gap:10px; }
-  header .logo { width:32px; height:32px; border-radius:8px; background:var(--accent); display:flex; align-items:center; justify-content:center; font-weight:700; }
+  /* Link para a tela principal: e o que se tenta clicar para voltar. Como
+     <a>, responde a teclado e a abrir em nova aba. */
+  header .logo { width:32px; height:32px; border-radius:8px; background:var(--accent); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; text-decoration:none; flex:none; }
+  header .logo:hover { filter:brightness(1.15); }
+  header .logo:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
   header h1 { font-size:18px; margin:0; }
   header a { margin-left:auto; color:var(--muted); text-decoration:none; font-size:14px; border:1px solid #374151; padding:6px 12px; border-radius:8px; }
   main { max-width:760px; margin:0 auto; padding:24px 20px 60px; }
@@ -168,7 +172,7 @@ export class ConnectionsController {
 </style></head>
 <body>
   <header>
-    <div class="logo">K</div>
+    <a class="logo" href="/chat" title="Ir para a tela principal" aria-label="Katalli — tela principal">K</a>
     <h1>Integracoes</h1>
     <a href="/chat">Voltar ao chat</a>
   </header>

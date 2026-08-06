@@ -332,7 +332,12 @@ export class ChatController {
   * { box-sizing:border-box; }
   body { margin:0; font-family:-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; }
   header { padding:16px 20px; background:var(--panel); border-bottom:1px solid #1f2937; display:flex; align-items:center; gap:10px; }
-  header .logo { width:32px; height:32px; border-radius:8px; background:var(--accent); display:flex; align-items:center; justify-content:center; font-weight:700; }
+  /* O simbolo e um link para a tela principal — e o que todo mundo tenta
+     clicar quando quer voltar. Como <a>, funciona com teclado e com abrir em
+     nova aba, o que um <div> com onclick nao daria. */
+  header .logo { width:32px; height:32px; border-radius:8px; background:var(--accent); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; text-decoration:none; flex:none; }
+  header .logo:hover { filter:brightness(1.15); }
+  header .logo:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
   header h1 { font-size:18px; margin:0; }
   header small { color:var(--muted); font-weight:400; }
   header .acoes { margin-left:auto; display:flex; gap:8px; align-items:center; }
@@ -400,7 +405,7 @@ export class ChatController {
   </div>
 
   <header class="oculto" id="cabecalho">
-    <div class="logo">K</div>
+    <a class="logo" href="/chat" title="Ir para a tela principal" aria-label="Katalli — tela principal">K</a>
     <div><h1>Katalli <small id="quem">· assistente</small></h1></div>
     <div class="acoes">
       <!--BOTAO_SUPORTE-->
