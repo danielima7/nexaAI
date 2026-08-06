@@ -154,7 +154,7 @@ export class InstagramController {
           this.pagina(
             '✅ Instagram conectado!',
             `<p>A conta <b>@${conta.username ?? conta.id}</b> (Pagina "${conta.pagina ?? '—'}")
-             foi conectada ao Kyrius. Pode fechar esta pagina e voltar ao WhatsApp.</p>`,
+             foi conectada ao Katalli. Pode fechar esta pagina e voltar ao WhatsApp.</p>`,
           ),
         );
         return;

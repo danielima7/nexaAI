@@ -7,7 +7,7 @@ import { SuporteService } from '../suporte/suporte.service';
  * Pagina publica de apresentacao do produto, servida na raiz do dominio.
  *
  * Mora aqui, e nao em um site externo, porque prospeccao B2B depende do
- * dominio proprio: o cliente ve kyrius.com.br, clica em "agendar" e cai no
+ * dominio proprio: o cliente ve katalli.com.br, clica em "agendar" e cai no
  * WhatsApp; depois entra no mesmo dominio para usar o produto. Um link de
  * plataforma de terceiro no meio desse caminho custa credibilidade
  * justamente com quem esta decidindo se confia dados financeiros a voce.
@@ -44,17 +44,17 @@ export class LandingController {
       // Canal COMERCIAL, nao o de suporte: quem chega pela pagina publica esta
       // pedindo demonstracao, nao socorro.
       const zap = this.suporte.linkComercial(
-        'Quero saber mais sobre a Kyrius',
+        'Quero saber mais sobre a Katalli',
       );
       const email =
-        this.config.get<string>('KYRIUS_CONTATO_EMAIL') ??
-        'contato@kyrius.com.br';
+        this.config.get<string>('KATALLI_CONTATO_EMAIL') ??
+        'contato@katalli.com.br';
 
       // Sem WhatsApp configurado, o botao cai no e-mail em vez de sumir: uma
       // landing sem caminho de contato e so uma pagina bonita.
       const destino = zap
         ? `href="${zap}" target="_blank" rel="noopener noreferrer"`
-        : `href="mailto:${email}?subject=Demonstra%C3%A7%C3%A3o%20do%20Kyrius"`;
+        : `href="mailto:${email}?subject=Demonstra%C3%A7%C3%A3o%20do%20Katalli"`;
 
       this.paginaCache = LandingController.HTML.replace(
         /<!--CTA-->/g,
@@ -78,16 +78,16 @@ export class LandingController {
    * caminho de asset mudar no deploy. O gradiente e o mesmo da marca —
    * desenhada sobre fundo escuro, que e o motivo de a pagina ser escura.
    */
-  private static readonly LOGO = `<svg class="logo" viewBox="0 0 210 128" role="img" aria-label="Kyrius">
+  private static readonly LOGO = `<svg class="logo" viewBox="0 0 210 128" role="img" aria-label="Katalli">
   <defs>
-    <linearGradient id="kyriusGrad" x1="0" y1="0.5" x2="1" y2="0.35">
+    <linearGradient id="katalliGrad" x1="0" y1="0.5" x2="1" y2="0.35">
       <stop offset="0%" stop-color="#1d4ed8"/>
       <stop offset="38%" stop-color="#0ea5e9"/>
       <stop offset="62%" stop-color="#10b981"/>
       <stop offset="100%" stop-color="#84cc16"/>
     </linearGradient>
   </defs>
-  <g fill="none" stroke="url(#kyriusGrad)" stroke-width="21" stroke-linecap="square">
+  <g fill="none" stroke="url(#katalliGrad)" stroke-width="21" stroke-linecap="square">
     <path d="M105,64 C105,36 84,20 62,20 C36,20 16,39 16,64 C16,89 36,108 62,108 C84,108 105,92 105,64 C105,36 126,20 148,20 C174,20 194,39 194,64 C194,89 174,108 148,108"/>
     <path d="M119,52 L186,124"/>
   </g>
@@ -97,7 +97,7 @@ export class LandingController {
 <html lang="pt-br"><head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Kyrius — Converse com os sistemas da sua empresa</title>
+<title>Katalli — Converse com os sistemas da sua empresa</title>
 <meta name="description" content="Pergunte em português e saiba quem está devendo, o que vence essa semana e o que aconteceu no seu CRM — sem abrir sistema nenhum."/>
 <style>
   /* Escuro porque a marca foi desenhada sobre preto: no fundo claro o
@@ -261,7 +261,7 @@ export class LandingController {
 
 <header class="topo">
   <div class="env">
-    <div class="marca">__LOGO__ Kyrius</div>
+    <div class="marca">__LOGO__ Katalli</div>
     <nav class="menu">
       <a href="#diferenca">A diferença</a>
       <a href="#conecta">Integrações</a>
@@ -320,7 +320,7 @@ export class LandingController {
     <h2>Não é automação. É alguém que entende o pedido.</h2>
     <p class="chamada">
       Ferramentas de automação executam um caminho que você configurou antes.
-      Se a pergunta muda, o caminho não serve. O Kyrius interpreta o que você
+      Se a pergunta muda, o caminho não serve. O Katalli interpreta o que você
       pediu e decide sozinho onde buscar.
     </p>
     <div class="versus">
@@ -335,7 +335,7 @@ export class LandingController {
         </ul>
       </div>
       <div class="depois">
-        <h3>Kyrius</h3>
+        <h3>Katalli</h3>
         <ul>
           <li>Você pergunta com as suas palavras, na hora</li>
           <li>Ele decide quais sistemas consultar</li>
@@ -420,7 +420,7 @@ Confirma o envio?</div>
       </div>
       <div class="cartao">
         <h3>Alertas quando algo muda</h3>
-        <p>Você diz o que quer acompanhar — <em>"me avisa quando aparecer inadimplente novo"</em> — e o Kyrius verifica sozinho, avisando só quando há mudança de verdade. Sem aviso repetido, sem ruído.</p>
+        <p>Você diz o que quer acompanhar — <em>"me avisa quando aparecer inadimplente novo"</em> — e o Katalli verifica sozinho, avisando só quando há mudança de verdade. Sem aviso repetido, sem ruído.</p>
       </div>
     </div>
   </div>
@@ -431,7 +431,7 @@ Confirma o envio?</div>
   <div class="env">
     <h2>Conecta no que você já usa</h2>
     <p class="chamada">
-      O Kyrius não substitui seus sistemas — ele conversa com eles. Você
+      O Katalli não substitui seus sistemas — ele conversa com eles. Você
       continua trabalhando do mesmo jeito; muda só como pergunta.
     </p>
     <div class="conecta">
@@ -462,7 +462,7 @@ Confirma o envio?</div>
         <span class="marca-v">✓</span>
         <div>
           <strong>Nada é alterado sem você confirmar</strong>
-          <p>Consultar é livre. Mas antes de cadastrar, alterar ou enviar qualquer coisa, o Kyrius descreve o que vai fazer e espera você autorizar. Não existe caminho em que ele age por conta própria.</p>
+          <p>Consultar é livre. Mas antes de cadastrar, alterar ou enviar qualquer coisa, o Katalli descreve o que vai fazer e espera você autorizar. Não existe caminho em que ele age por conta própria.</p>
         </div>
       </div>
       <div>
@@ -483,7 +483,7 @@ Confirma o envio?</div>
         <span class="marca-v">✓</span>
         <div>
           <strong>Toda operação fica registrada</strong>
-          <p>Tudo que o Kyrius consulta ou executa vai para um histórico auditável. Você pode perguntar, no próprio chat, o que foi feito e quando.</p>
+          <p>Tudo que o Katalli consulta ou executa vai para um histórico auditável. Você pode perguntar, no próprio chat, o que foi feito e quando.</p>
         </div>
       </div>
       <div>
@@ -504,7 +504,7 @@ Confirma o envio?</div>
     <div class="grade g3">
       <div class="cartao">
         <h3>1. Conversamos</h3>
-        <p>Entendo o que você usa hoje e onde perde tempo. Se o Kyrius não ajudar no seu caso, eu falo na hora.</p>
+        <p>Entendo o que você usa hoje e onde perde tempo. Se o Katalli não ajudar no seu caso, eu falo na hora.</p>
       </div>
       <div class="cartao">
         <h3>2. Conecto com você</h3>
@@ -535,7 +535,7 @@ Confirma o envio?</div>
 
 <footer class="rodape">
   <div class="env">
-    <div class="marca">__LOGO__ Kyrius</div>
+    <div class="marca">__LOGO__ Katalli</div>
     <a href="mailto:<!--EMAIL-->"><!--EMAIL--></a>
     <span class="dir">Assistente de IA para pequenas e médias empresas</span>
 

@@ -106,7 +106,7 @@ export class InviteController {
 <html lang="pt-br"><head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Kyrius — Criar acesso</title>
+<title>Katalli — Criar acesso</title>
 <style>
   :root { --bg:#0f172a; --panel:#111827; --accent:#7c3aed; --text:#e5e7eb; --muted:#9ca3af; --erro:#f87171; --ok:#34d399; }
   * { box-sizing:border-box; }
@@ -131,7 +131,7 @@ export class InviteController {
     <div class="logo">K</div>
 
     <div id="carregando">
-      <h2>Kyrius</h2>
+      <h2>Katalli</h2>
       <p class="sub">Verificando seu convite...</p>
     </div>
 
@@ -196,8 +196,8 @@ export class InviteController {
 
       const naEmpresa = dados.empresa ? ' na ' + dados.empresa : '';
       apresentacao.textContent = aberto
-        ? 'Voce foi convidado para usar o Kyrius' + naEmpresa + '. Informe seu e-mail e escolha uma senha.'
-        : 'Voce foi convidado para usar o Kyrius' + naEmpresa + '. Escolha uma senha para entrar.';
+        ? 'Voce foi convidado para usar o Katalli' + naEmpresa + '. Informe seu e-mail e escolha uma senha.'
+        : 'Voce foi convidado para usar o Katalli' + naEmpresa + '. Escolha uma senha para entrar.';
 
       carregando.classList.add('oculto');
       formulario.classList.remove('oculto');
@@ -240,8 +240,8 @@ export class InviteController {
         return;
       }
       // Ja entra logado: guarda a sessao e segue para o chat.
-      localStorage.setItem('kyrius_token', dados.token);
-      if (dados.nome) localStorage.setItem('kyrius_nome', dados.nome);
+      localStorage.setItem('katalli_token', dados.token);
+      if (dados.nome) localStorage.setItem('katalli_nome', dados.nome);
       location.href = '/chat';
     } catch (err) {
       erro.textContent = 'Erro ao falar com o servidor.';

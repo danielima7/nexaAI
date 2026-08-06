@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 /**
- * Canal de suporte humano do Kyrius (WhatsApp).
+ * Canal de suporte humano do Katalli (WhatsApp).
  *
  * E um link `wa.me`, nao uma integracao: nao passa por API da Meta, nao exige
  * aprovacao e nao envia nada sozinho. Quem escreve e o cliente, quem responde
@@ -34,18 +34,18 @@ export class SuporteService {
 
   constructor(config: ConfigService) {
     this.numero = SuporteService.normalizar(
-      config.get<string>('KYRIUS_SUPORTE_WHATSAPP'),
+      config.get<string>('KATALLI_SUPORTE_WHATSAPP'),
     );
     this.numeroComercial =
       SuporteService.normalizar(
-        config.get<string>('KYRIUS_COMERCIAL_WHATSAPP'),
+        config.get<string>('KATALLI_COMERCIAL_WHATSAPP'),
       ) ?? this.numero;
 
     if (this.numero) {
       this.logger.log(`Suporte por WhatsApp ativo (${this.numero}).`);
     } else {
       this.logger.warn(
-        'KYRIUS_SUPORTE_WHATSAPP nao configurado — o botao de suporte fica oculto.',
+        'KATALLI_SUPORTE_WHATSAPP nao configurado — o botao de suporte fica oculto.',
       );
     }
 
@@ -72,7 +72,7 @@ export class SuporteService {
     // Faixa deliberadamente larga para nao recusar numero de outro pais.
     if (digitos.length < 10 || digitos.length > 15) {
       new Logger(SuporteService.name).error(
-        `KYRIUS_SUPORTE_WHATSAPP tem ${digitos.length} digitos, fora da faixa valida (10-15). ` +
+        `KATALLI_SUPORTE_WHATSAPP tem ${digitos.length} digitos, fora da faixa valida (10-15). ` +
           'Use o formato internacional, ex: 5524999990000. Suporte desativado.',
       );
       return undefined;
@@ -118,7 +118,7 @@ export class SuporteService {
    * quando nao ha suporte configurado, entao quem chama pode sempre concatenar.
    */
   rodapeEmail(): string {
-    const url = this.link('Ola! Preciso de ajuda com o Kyrius.');
+    const url = this.link('Ola! Preciso de ajuda com o Katalli.');
     if (!url) return '';
 
     return `\n\n---\nPrecisa de ajuda? Fale conosco no WhatsApp: ${url}`;

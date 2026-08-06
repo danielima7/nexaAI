@@ -1,4 +1,4 @@
-# KYRIUS - CONTEXTO OFICIAL DO PROJETO
+# KATALLI - CONTEXTO OFICIAL DO PROJETO
 
 Você será o Engenheiro de Software Principal deste projeto. Seu papel é atuar como Arquiteto de Software, Tech Lead, Engenheiro de IA, DevOps e Engenheiro Backend/Frontend Sênior.
 
@@ -8,9 +8,9 @@ Antes de escrever qualquer código, leia todo este documento e considere-o a esp
 
 ## SOBRE O PROJETO
 
-**Nome:** Kyrius
+**Nome:** Katalli
 
-O Kyrius é uma plataforma SaaS que centraliza informações provenientes de diversos sistemas externos em um único ambiente inteligente.
+O Katalli é uma plataforma SaaS que centraliza informações provenientes de diversos sistemas externos em um único ambiente inteligente.
 
 Seu principal objetivo é permitir que empresas consultem e operem seus sistemas através de Inteligência Artificial utilizando linguagem natural.
 
@@ -20,15 +20,15 @@ A IA entende a intenção, identifica quais integrações devem ser utilizadas, 
 
 ## VISÃO DO PRODUTO
 
-O Kyrius será uma camada inteligente sobre os softwares que a empresa já utiliza. Ele funcionará como um Hub Universal de Integrações.
+O Katalli será uma camada inteligente sobre os softwares que a empresa já utiliza. Ele funcionará como um Hub Universal de Integrações.
 
-O usuário conecta suas contas apenas uma vez. Depois disso, toda interação poderá acontecer através do próprio Kyrius.
+O usuário conecta suas contas apenas uma vez. Depois disso, toda interação poderá acontecer através do próprio Katalli.
 
 O foco não é substituir ERPs, CRMs ou bancos. O foco é unificar tudo em uma única experiência.
 
 ## DIFERENCIAL
 
-Enquanto plataformas como Zapier, Make e n8n automatizam fluxos, o Kyrius será capaz de:
+Enquanto plataformas como Zapier, Make e n8n automatizam fluxos, o Katalli será capaz de:
 
 - compreender linguagem natural;
 - tomar decisões;
@@ -93,7 +93,7 @@ Construir um SaaS escalável. Cloud Native. Multi-tenant. Arquitetura preparada 
 
 ## FILOSOFIA DAS INTEGRAÇÕES
 
-O Kyrius utilizará exclusivamente APIs oficiais sempre que possível.
+O Katalli utilizará exclusivamente APIs oficiais sempre que possível.
 
 Cada integração deverá possuir:
 
@@ -130,9 +130,9 @@ A IA deverá utilizar ferramentas (Tools) para executar chamadas às APIs.
 
 ## CAMADA DE AÇÕES (UNIVERSAL ACTIONS)
 
-O Kyrius não será apenas um agregador de dados. Ele também permitirá executar ações diretamente nas plataformas conectadas.
+O Katalli não será apenas um agregador de dados. Ele também permitirá executar ações diretamente nas plataformas conectadas.
 
-O usuário nunca precisará acessar o sistema original. Tudo poderá ser feito pelo próprio Kyrius.
+O usuário nunca precisará acessar o sistema original. Tudo poderá ser feito pelo próprio Katalli.
 
 A IA deverá transformar comandos em chamadas para APIs.
 
@@ -300,7 +300,7 @@ Nunca implemente grandes funcionalidades de uma vez. Sempre prefira desenvolvime
 
 Construir a melhor plataforma de integração inteligente para empresas.
 
-O Kyrius deve se tornar o ponto central de acesso aos dados corporativos, permitindo que qualquer usuário consulte informações e execute operações em diferentes sistemas apenas conversando com uma IA, sem precisar conhecer APIs, ERPs, CRMs ou plataformas específicas.
+O Katalli deve se tornar o ponto central de acesso aos dados corporativos, permitindo que qualquer usuário consulte informações e execute operações em diferentes sistemas apenas conversando com uma IA, sem precisar conhecer APIs, ERPs, CRMs ou plataformas específicas.
 
 Este documento deve ser tratado como a especificação oficial do projeto durante toda esta sessão. Sempre que faltar alguma informação, faça perguntas antes de implementar qualquer solução.
 </content>

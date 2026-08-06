@@ -6,7 +6,7 @@ import { AiModule } from '../../ai/ai.module';
 /**
  * Modulo isolado da integracao com o WhatsApp Business Platform.
  *
- * Segue a filosofia do Kyrius: cada integracao e um modulo independente,
+ * Segue a filosofia do Katalli: cada integracao e um modulo independente,
  * podendo ser adicionada/removida sem afetar o restante da arquitetura.
  */
 @Module({

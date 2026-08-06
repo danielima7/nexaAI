@@ -48,11 +48,11 @@ export class PluggyController {
       res.send(`<!doctype html>
 <html lang="pt-br"><head><meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Conectar banco — Kyrius</title>
+<title>Conectar banco — Katalli</title>
 <script src="https://cdn.pluggy.ai/pluggy-connect/v2.8.2/pluggy-connect.js"></script>
 </head>
 <body style="font-family:sans-serif;text-align:center;margin-top:60px">
-<h2>Conectar seu banco ao Kyrius</h2>
+<h2>Conectar seu banco ao Katalli</h2>
 <p>Abrindo o seletor de bancos...</p>
 <script>
   const pluggyConnect = new PluggyConnect({
@@ -94,7 +94,7 @@ export class PluggyController {
     res.send(
       `<html><body style="font-family:sans-serif;text-align:center;margin-top:60px">
         <h2>✅ Banco conectado!</h2>
-        <p>Sua conta foi conectada ao Kyrius. Pode fechar esta pagina e voltar ao WhatsApp.</p>
+        <p>Sua conta foi conectada ao Katalli. Pode fechar esta pagina e voltar ao WhatsApp.</p>
         <p>A sincronizacao leva alguns segundos. Depois pergunte seu saldo ou extrato.</p>
       </body></html>`,
     );

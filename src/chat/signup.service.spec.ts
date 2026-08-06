@@ -62,22 +62,22 @@ describe('SignupService (cadastro aberto)', () => {
       ['1', '1'],
       ['sim', 'sim'],
       ['TRUE com espacos vira valido, mas "truee" nao', 'truee'],
-    ])('fica DESLIGADO quando KYRIUS_AUTOCADASTRO=%s', async (_c, valor) => {
-      const { servico } = montar({ KYRIUS_AUTOCADASTRO: valor as string });
+    ])('fica DESLIGADO quando KATALLI_AUTOCADASTRO=%s', async (_c, valor) => {
+      const { servico } = montar({ KATALLI_AUTOCADASTRO: valor as string });
       expect(servico.habilitado).toBe(false);
       await expect(servico.criar(validos)).rejects.toThrow(/desativado/i);
     });
 
     it.each(['true', 'TRUE', ' true '])('liga com %s', (valor) => {
-      expect(montar({ KYRIUS_AUTOCADASTRO: valor }).servico.habilitado).toBe(true);
+      expect(montar({ KATALLI_AUTOCADASTRO: valor }).servico.habilitado).toBe(true);
     });
   });
 
   describe('teto de mensagens', () => {
     it('toda conta criada aqui nasce com limite', async () => {
       const { servico, criadas } = montar({
-        KYRIUS_AUTOCADASTRO: 'true',
-        KYRIUS_AUTOCADASTRO_LIMITE: '30',
+        KATALLI_AUTOCADASTRO: 'true',
+        KATALLI_AUTOCADASTRO_LIMITE: '30',
       });
 
       await servico.criar(validos);
@@ -97,8 +97,8 @@ describe('SignupService (cadastro aberto)', () => {
       ['quase a palavra certa', 'ilimitados'],
     ])('cai no padrao de 20 quando o limite e %s', (_c, valor) => {
       const { servico } = montar({
-        KYRIUS_AUTOCADASTRO: 'true',
-        KYRIUS_AUTOCADASTRO_LIMITE: valor as string,
+        KATALLI_AUTOCADASTRO: 'true',
+        KATALLI_AUTOCADASTRO_LIMITE: valor as string,
       });
       // Config quebrada NUNCA pode virar ilimitado: seria abrir a chave de IA
       // por engano, e o erro so apareceria na fatura.
@@ -109,8 +109,8 @@ describe('SignupService (cadastro aberto)', () => {
       'aceita "sem teto" so quando escrito por extenso: %s',
       (valor) => {
         const { servico } = montar({
-          KYRIUS_AUTOCADASTRO: 'true',
-          KYRIUS_AUTOCADASTRO_LIMITE: valor,
+          KATALLI_AUTOCADASTRO: 'true',
+          KATALLI_AUTOCADASTRO_LIMITE: valor,
         });
         expect(servico.limite).toBeNull();
       },
@@ -118,8 +118,8 @@ describe('SignupService (cadastro aberto)', () => {
 
     it('conta sem teto nasce com limiteInteracoes nulo', async () => {
       const { servico, criadas } = montar({
-        KYRIUS_AUTOCADASTRO: 'true',
-        KYRIUS_AUTOCADASTRO_LIMITE: 'ilimitado',
+        KATALLI_AUTOCADASTRO: 'true',
+        KATALLI_AUTOCADASTRO_LIMITE: 'ilimitado',
       });
 
       await servico.criar(validos);
@@ -134,7 +134,7 @@ describe('SignupService (cadastro aberto)', () => {
   });
 
   describe('validacao dos dados', () => {
-    const ligado = { KYRIUS_AUTOCADASTRO: 'true' };
+    const ligado = { KATALLI_AUTOCADASTRO: 'true' };
 
     it.each([
       ['e-mail sem arroba', { ...validos, email: 'sem-arroba' }, /e-mail valido/i],

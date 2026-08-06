@@ -59,7 +59,7 @@ export class ReportTools implements OnModuleInit {
   onModuleInit(): void {
     this.registry.register({
       definition: {
-        name: 'kyrius_resumo_diario_status',
+        name: 'katalli_resumo_diario_status',
         description:
           'Mostra se o resumo diario automatico esta ativo, em que horario e com qual foco. Use quando o usuario perguntar sobre o resumo/relatorio diario ou quiser saber se esta configurado.',
         input_schema: { type: 'object', properties: {} },
@@ -77,9 +77,9 @@ export class ReportTools implements OnModuleInit {
 
     this.registry.register({
       definition: {
-        name: 'kyrius_configurar_resumo_diario',
+        name: 'katalli_configurar_resumo_diario',
         description:
-          'Ativa, desativa ou ajusta o resumo diario automatico que o Kyrius envia sozinho pelo WhatsApp. Use quando o usuario pedir para receber um resumo/relatorio todo dia, mudar o horario, ou parar de receber.',
+          'Ativa, desativa ou ajusta o resumo diario automatico que o Katalli envia sozinho pelo WhatsApp. Use quando o usuario pedir para receber um resumo/relatorio todo dia, mudar o horario, ou parar de receber.',
         input_schema: {
           type: 'object',
           properties: {

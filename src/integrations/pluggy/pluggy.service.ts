@@ -5,7 +5,7 @@ import axios, { AxiosInstance } from 'axios';
 /**
  * Service da integracao com o Pluggy (agregador de Open Finance / bancos).
  *
- * Modelo: o Kyrius tem UMA aplicacao (clientId/secret, no .env, global).
+ * Modelo: o Katalli tem UMA aplicacao (clientId/secret, no .env, global).
  * Cada organizacao conecta um banco -> gera um "item" (itemId), que fica
  * guardado por organizacao (Connection). As consultas usam esse itemId.
  */

@@ -11,7 +11,7 @@
  * de ninguem, mostrando o fluxo real em vez de uma encenacao.
  *
  * A empresa ficticia e uma auto eletrica de porte pequeno — proxima do publico
- * que o Kyrius atende, com numeros plausiveis. Numeros redondos demais ou
+ * que o Katalli atende, com numeros plausiveis. Numeros redondos demais ou
  * grandes demais fazem a demonstracao parecer falsa.
  */
 

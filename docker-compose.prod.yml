@@ -1,4 +1,4 @@
-# Kyrius em producao: aplicacao + banco, prontos para uma VPS.
+# Katalli em producao: aplicacao + banco, prontos para uma VPS.
 #
 # Subir:      docker compose -f docker-compose.prod.yml up -d --build
 # Migrar:     docker compose -f docker-compose.prod.yml exec app npx prisma migrate deploy

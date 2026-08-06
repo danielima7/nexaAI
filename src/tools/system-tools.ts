@@ -6,7 +6,7 @@ import { ConnectionsService } from '../connections/connections.service';
 import { PROVEDORES } from '../connections/provider-catalog';
 
 /**
- * Ferramentas "de sistema" do proprio Kyrius (nao ligadas a uma integracao
+ * Ferramentas "de sistema" do proprio Katalli (nao ligadas a uma integracao
  * externa): historico de operacoes e conexao de integracoes por organizacao.
  */
 @Injectable()
@@ -31,7 +31,7 @@ export class SystemTools implements OnModuleInit {
   onModuleInit(): void {
     this.registry.register({
       definition: {
-        name: 'kyrius_conectar_integracao',
+        name: 'katalli_conectar_integracao',
         description:
           'Devolve o link da pagina segura onde o usuario conecta as proprias integracoes (HubSpot, Stripe, Asaas, Mercado Pago, Pagar.me, Google, Instagram e contas bancarias). Use SEMPRE que o usuario pedir para conectar ou configurar uma integracao. NUNCA peca a chave de API ou token pela conversa — credenciais so devem ser informadas nessa pagina.',
         input_schema: {
@@ -83,7 +83,7 @@ export class SystemTools implements OnModuleInit {
 
     this.registry.register({
       definition: {
-        name: 'kyrius_listar_integracoes',
+        name: 'katalli_listar_integracoes',
         description:
           'Lista as integracoes que a organizacao do usuario conectou (com credencial propria). Use quando o usuario perguntar quais integracoes estao conectadas.',
         input_schema: { type: 'object', properties: {} },
@@ -120,7 +120,7 @@ export class SystemTools implements OnModuleInit {
      */
     this.registry.register({
       definition: {
-        name: 'kyrius_configurar_atendimento',
+        name: 'katalli_configurar_atendimento',
         description:
           'Define ou consulta as instrucoes do atendimento automatico ao publico (mensagens no Direct do Instagram): horario, endereco, servicos, precos e o que responder. Chame sem argumentos para ver as instrucoes atuais. Enquanto nao houver instrucoes, o atendimento ao publico fica desligado.',
         input_schema: {
@@ -164,9 +164,9 @@ export class SystemTools implements OnModuleInit {
 
     this.registry.register({
       definition: {
-        name: 'kyrius_historico_operacoes',
+        name: 'katalli_historico_operacoes',
         description:
-          'Lista as acoes/operacoes mais recentes que o Kyrius executou para este contato (auditoria). Use quando o usuario perguntar o que voce fez, o historico de acoes, ou o que foi feito recentemente.',
+          'Lista as acoes/operacoes mais recentes que o Katalli executou para este contato (auditoria). Use quando o usuario perguntar o que voce fez, o historico de acoes, ou o que foi feito recentemente.',
         input_schema: {
           type: 'object',
           properties: {

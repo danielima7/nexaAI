@@ -1,7 +1,7 @@
-# PROMPT DE CONTINUIDADE — PROJETO KYRIUS
+# PROMPT DE CONTINUIDADE — PROJETO KATALLI
 *Estado em 30/07/2026. Cole isto no início do próximo chat.*
 
-Você é o Engenheiro de Software Principal do projeto **Kyrius** (Arquiteto, Tech Lead, Engenheiro de IA, DevOps, Backend/Frontend Sênior). Pense como CTO de uma startup SaaS. Fale comigo em **português do Brasil**. Leia tudo antes de escrever código.
+Você é o Engenheiro de Software Principal do projeto **Katalli** (Arquiteto, Tech Lead, Engenheiro de IA, DevOps, Backend/Frontend Sênior). Pense como CTO de uma startup SaaS. Fale comigo em **português do Brasil**. Leia tudo antes de escrever código.
 
 ---
 
@@ -19,15 +19,15 @@ Comentários no código devem explicar **por quê**, não o quê — o padrão d
 
 ## 2. O PRODUTO
 
-**Kyrius** — SaaS multi-tenant que coloca uma camada de IA conversacional sobre os sistemas que a empresa já usa. O dono da PME conversa em linguagem natural; a IA interpreta a intenção, decide quais APIs consultar/executar, cruza dados e responde como um analista.
+**Katalli** — SaaS multi-tenant que coloca uma camada de IA conversacional sobre os sistemas que a empresa já usa. O dono da PME conversa em linguagem natural; a IA interpreta a intenção, decide quais APIs consultar/executar, cruza dados e responde como um analista.
 
-**Diferencial vs Zapier/Make/n8n:** aqueles automatizam fluxos pré-configurados. O Kyrius entende linguagem natural, decide sozinho, cruza informações e gera análise.
+**Diferencial vs Zapier/Make/n8n:** aqueles automatizam fluxos pré-configurados. O Katalli entende linguagem natural, decide sozinho, cruza informações e gera análise.
 
 **Universal Actions:** o usuário nunca precisa conhecer a API por baixo. "Cadastre um cliente" vira Company no HubSpot, Cliente no Sankhya, etc.
 
 **Público-alvo (calibrado):** o roteiro original dizia "empresas locais de pequeno porte", mas o **preço definido é R$ 750–1.000/mês** — isso não é preço de padaria. O alvo real é **PME estruturada que já paga ERP e CRM**.
 
-**HISTÓRICO DE NOME:** o produto se chamava "Nexa" e virou **Kyrius** em 2026-07-20. NÃO foram renomeados de propósito: banco `nexa`, container `nexa-postgres`, pasta `nexaAI`, app Meta "Nexa AI".
+**HISTÓRICO DE NOME:** o produto se chamava "Nexa" e virou **Katalli** em 2026-07-20. NÃO foram renomeados de propósito: banco `nexa`, container `nexa-postgres`, pasta `nexaAI`, app Meta "Nexa AI".
 
 ---
 
@@ -45,7 +45,7 @@ Repare no `nexaAI\nexaAI` duplicado. Há um **repositório git vazio, sem commit
 
 Remoto: `github.com/danielima7/nexaAI`. Commito direto na `main`.
 
-Docs no projeto: `CLAUDE.md` (especificação oficial), `KYRIUS-REFERENCIA.md`, este arquivo.
+Docs no projeto: `CLAUDE.md` (especificação oficial), `KATALLI-REFERENCIA.md`, este arquivo.
 
 ---
 
@@ -139,15 +139,15 @@ export interface AgentTool {
 
 ### As 58 ferramentas
 
-- **Sistema (5):** `kyrius_conectar_integracao` (devolve LINK, nunca aceita chave), `kyrius_listar_integracoes`, `kyrius_historico_operacoes`, `kyrius_configurar_atendimento`, + tools de resumo
+- **Sistema (5):** `katalli_conectar_integracao` (devolve LINK, nunca aceita chave), `katalli_listar_integracoes`, `katalli_historico_operacoes`, `katalli_configurar_atendimento`, + tools de resumo
 - **HubSpot (10):** criar/buscar/atualizar empresa, contato, negócio, mover negócio, observação
 - **Stripe (5)**, **Mercado Pago (3)**, **Asaas (5)**, **Pagar.me (4)**
 - **Google (5):** conectar, Gmail listar/enviar, Agenda listar/criar
 - **Planilhas Google (6):** `planilha_listar|listar_abas|ler|adicionar_linha|atualizar|criar`
 - **Pluggy (5):** conectar banco, conectar teste, contas, saldo, transações
 - **Instagram (4):** conectar, resumo_conta, metricas, posts_recentes
-- **Resumo diário (2):** `kyrius_resumo_diario_status`, `kyrius_configurar_resumo_diario`
-- **Alertas (3):** `kyrius_criar_alerta`, `kyrius_listar_alertas`, `kyrius_remover_alerta`
+- **Resumo diário (2):** `katalli_resumo_diario_status`, `katalli_configurar_resumo_diario`
+- **Alertas (3):** `katalli_criar_alerta`, `katalli_listar_alertas`, `katalli_remover_alerta`
 - **Arquivos (2):** `arquivo_ler`, `arquivo_listar`
 
 ---
@@ -222,7 +222,7 @@ ngrok http --url=https://glade-charter-class.ngrok-free.dev 3000
 ### Instagram — funciona, mas o DM não
 A API responde normalmente (`@eng.danlima`). Falta: assinatura do objeto `instagram` nos webhooks (só existe a do WhatsApp) e **app publicado**.
 
-### Google Cloud — projeto "kyrius" (nº 1054881456802)
+### Google Cloud — projeto "katalli" (nº 1054881456802)
 APIs ativas: Gmail, Calendar, Sheets, Drive. App em **modo de teste** (até 100 usuários adicionados manualmente em "Público-alvo" — contorno válido para os primeiros clientes).
 ⚠️ **Ao publicar, corte apenas `gmail.readonly`** (escopo *restrito*, exige auditoria de segurança que custa milhares de dólares). **MANTENHA `gmail.send`** (apenas *sensível*) — é o transporte do resumo diário por e-mail.
 
@@ -277,7 +277,7 @@ APIs ativas: Gmail, Calendar, Sheets, Drive. App em **modo de teste** (até 100 
 
 ## 17. IDEIAS DISCUTIDAS E NÃO IMPLEMENTADAS
 
-- **Memória de negócio** — o Kyrius lembrar fatos que o dono conta ("meu contador é o João")
+- **Memória de negócio** — o Katalli lembrar fatos que o dono conta ("meu contador é o João")
 - **Comparação temporal** — "essa semana vs a passada" nos resumos e alertas
 - **Exportar em Excel** — transformar resposta em arquivo baixável
 - **Painel de operação interno** — organizações, consumo de tokens por cliente, últimas operações
@@ -292,4 +292,4 @@ APIs ativas: Gmail, Calendar, Sheets, Drive. App em **modo de teste** (até 100 
 
 **Para retomar:** abrir Docker Desktop → `docker start nexa-postgres` → `npm run start:dev` → `http://localhost:3000/chat`.
 
-**Demonstração:** `demo@kyrius.com.br` / `demo-kyrius-2026` (org "Auto Elétrica Silva", 7 integrações fictícias, uma planilha carregada).
+**Demonstração:** `demo@katalli.com.br` / `demo-katalli-2026` (org "Auto Elétrica Silva", 7 integrações fictícias, uma planilha carregada).

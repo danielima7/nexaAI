@@ -10,7 +10,7 @@ import { AlertService } from './alert.service';
 import { AlertTools } from './alert.tools';
 
 /**
- * Avisos proativos: o Kyrius falando sem ser perguntado.
+ * Avisos proativos: o Katalli falando sem ser perguntado.
  *
  * Duas formas, com custos bem diferentes:
  *  - RESUMO DIARIO: sai no horario marcado, sempre. Uma chamada de IA por dia.

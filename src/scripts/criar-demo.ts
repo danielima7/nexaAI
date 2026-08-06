@@ -3,7 +3,7 @@
  *
  * Uso:
  *   npm run demo:criar
- *   npm run demo:criar -- --email demo@kyrius.com.br --senha MinhaSenha
+ *   npm run demo:criar -- --email demo@katalli.com.br --senha MinhaSenha
  *
  * Serve para apresentar o produto numa reuniao sem expor dados reais — seus ou
  * de clientes. As ferramentas respondem com dados ficticios de uma auto
@@ -47,8 +47,8 @@ async function main(): Promise<void> {
   const contas = new ChatAccountService(prisma as any);
 
   try {
-    const email = arg('email') ?? 'demo@kyrius.com.br';
-    const senha = arg('senha') ?? 'demo-kyrius-2026';
+    const email = arg('email') ?? 'demo@katalli.com.br';
+    const senha = arg('senha') ?? 'demo-katalli-2026';
 
     // Organizacao (idempotente pelo nome).
     let org = await prisma.organization.findFirst({

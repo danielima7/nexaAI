@@ -1,4 +1,4 @@
-# Proxy reverso e TLS do Kyrius.
+# Proxy reverso e TLS do Katalli.
 #
 # O Caddy obtem e RENOVA sozinho o certificado Let's Encrypt — sem certbot,
 # sem cron, sem renovacao esquecida vencendo num domingo. Em troca, ele exige
@@ -10,7 +10,7 @@
 # colocaria a chave da Anthropic, a do Asaas e a CONNECTION_ENCRYPTION_KEY
 # dentro do processo mais atacavel da pilha, sem nenhuma necessidade.
 
-{$KYRIUS_DOMINIO} {
+{$KATALLI_DOMINIO} {
 	# `app` e o nome do servico no compose: resolvido pela rede interna, nunca
 	# pela internet. A aplicacao nao publica porta nenhuma no host.
 	reverse_proxy app:3000

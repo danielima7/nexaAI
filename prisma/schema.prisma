@@ -1,4 +1,4 @@
-// Schema do banco de dados do Kyrius (Prisma + PostgreSQL).
+// Schema do banco de dados do Katalli (Prisma + PostgreSQL).
 // Fase 1 multi-tenant: organizacoes, usuarios, e escopo de conversas/logs.
 
 generator client {
@@ -10,7 +10,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// Uma empresa/cliente do Kyrius (tenant).
+/// Uma empresa/cliente do Katalli (tenant).
 model Organization {
   id        String   @id @default(uuid())
   name      String
@@ -42,7 +42,7 @@ model Organization {
   /// Teto de mensagens que esta organizacao pode enviar no chat.
   ///
   /// `null` = sem teto (todo cliente que voce cadastra por convite). Contas de
-  /// autocadastro nascem com o limite de KYRIUS_AUTOCADASTRO_LIMITE, porque a
+  /// autocadastro nascem com o limite de KATALLI_AUTOCADASTRO_LIMITE, porque a
   /// rota e publica: sem teto, quem descobrisse a URL gastaria a chave da
   /// Anthropic ate o credito acabar, e a conta so apareceria na fatura.
   limiteInteracoes Int?
@@ -162,7 +162,7 @@ model Alert {
 
 /// Preferencia de resumo diario proativo de uma organizacao.
 ///
-/// O Kyrius envia o resumo sozinho no horario configurado, sem o dono
+/// O Katalli envia o resumo sozinho no horario configurado, sem o dono
 /// precisar perguntar — e o que transforma o produto de "ferramenta que
 /// respondo quando lembro" em "assistente que trabalha".
 model ReportSchedule {

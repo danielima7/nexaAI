@@ -28,7 +28,7 @@ import { SuporteService } from '../suporte/suporte.service';
 import { AiUsageService } from '../ai/ai-usage.service';
 
 /**
- * Chat Web do Kyrius: uma pagina simples servida pelo backend + um endpoint
+ * Chat Web do Katalli: uma pagina simples servida pelo backend + um endpoint
  * que reaproveita a mesma IA, ferramentas, memoria e multi-tenant do WhatsApp.
  *
  * AUTENTICADO POR CONTA: cada pessoa entra com o proprio e-mail e senha, e a
@@ -147,8 +147,8 @@ export class ChatController {
 
     const saudacao =
       nomes.length === 0
-        ? 'Ola! Sou o Kyrius. Ainda nao ha nenhuma conta conectada — assim que voce conectar em "Integracoes", posso consultar seus dados e responder sobre o seu negocio.'
-        : `Ola! Sou o Kyrius. Ja estou conectado a ${nomes.join(', ')}. Pode perguntar o que quiser sobre o seu negocio.`;
+        ? 'Ola! Sou o Katalli. Ainda nao ha nenhuma conta conectada — assim que voce conectar em "Integracoes", posso consultar seus dados e responder sobre o seu negocio.'
+        : `Ola! Sou o Katalli. Ja estou conectado a ${nomes.join(', ')}. Pode perguntar o que quiser sobre o seu negocio.`;
 
     return { saudacao, sugestoes: sugestoesPara(conectados) };
   }
@@ -294,7 +294,7 @@ export class ChatController {
   private get pagina(): string {
     if (this.paginaCache === undefined) {
       const url = this.suporte.link(
-        'Ola! Preciso de ajuda com o Kyrius.',
+        'Ola! Preciso de ajuda com o Katalli.',
       );
       // Sem numero configurado, o marcador vira vazio e o botao some — melhor
       // do que um link que leva o cliente a uma tela de erro do WhatsApp
@@ -326,7 +326,7 @@ export class ChatController {
 <html lang="pt-br"><head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Kyrius — Chat</title>
+<title>Katalli — Chat</title>
 <style>
   :root { --bg:#0f172a; --panel:#111827; --accent:#7c3aed; --me:#7c3aed; --bot:#1f2937; --text:#e5e7eb; --muted:#9ca3af; --erro:#f87171; }
   * { box-sizing:border-box; }
@@ -382,7 +382,7 @@ export class ChatController {
 <body>
   <div id="login">
     <div class="caixa">
-      <h2>Kyrius</h2>
+      <h2>Katalli</h2>
       <p>Entre com o e-mail e a senha da sua empresa.</p>
       <form id="formLogin">
         <input id="email" type="email" placeholder="E-mail" autocomplete="username" />
@@ -401,7 +401,7 @@ export class ChatController {
 
   <header class="oculto" id="cabecalho">
     <div class="logo">K</div>
-    <div><h1>Kyrius <small id="quem">· assistente</small></h1></div>
+    <div><h1>Katalli <small id="quem">· assistente</small></h1></div>
     <div class="acoes">
       <!--BOTAO_SUPORTE-->
       <a class="integracoes" href="/integracoes">Integracoes</a>
@@ -424,8 +424,8 @@ export class ChatController {
   </nav>
 
 <script>
-  const sessionId = localStorage.getItem('kyrius_session') || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
-  localStorage.setItem('kyrius_session', sessionId);
+  const sessionId = localStorage.getItem('katalli_session') || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
+  localStorage.setItem('katalli_session', sessionId);
 
   const login = document.getElementById('login');
   const formLogin = document.getElementById('formLogin');
@@ -441,12 +441,12 @@ export class ChatController {
   const send = document.getElementById('send');
   const sair = document.getElementById('sair');
 
-  function token() { return localStorage.getItem('kyrius_token'); }
+  function token() { return localStorage.getItem('katalli_token'); }
 
   function mostrarChat() {
     login.classList.add('oculto');
     [cabecalho, messages, form, legais].forEach(el => el.classList.remove('oculto'));
-    const nome = localStorage.getItem('kyrius_nome');
+    const nome = localStorage.getItem('katalli_nome');
     if (nome) quem.textContent = '· ' + nome;
     if (!messages.hasChildNodes()) carregarInicio();
     input.focus();
@@ -456,7 +456,7 @@ export class ChatController {
   // organizacao conectou — nao adianta sugerir "quem esta inadimplente?"
   // para quem nao ligou o financeiro.
   async function carregarInicio() {
-    let dados = { saudacao: 'Ola! Sou o Kyrius. Como posso ajudar?', sugestoes: [] };
+    let dados = { saudacao: 'Ola! Sou o Katalli. Como posso ajudar?', sugestoes: [] };
     try {
       const r = await fetch('/chat/inicio', {
         headers: { 'Authorization': 'Bearer ' + token() }
@@ -487,7 +487,7 @@ export class ChatController {
   }
 
   function mostrarLogin(mensagem) {
-    localStorage.removeItem('kyrius_token');
+    localStorage.removeItem('katalli_token');
     login.classList.remove('oculto');
     [cabecalho, messages, form, legais].forEach(el => el.classList.add('oculto'));
     erro.textContent = mensagem || '';
@@ -518,8 +518,8 @@ export class ChatController {
         return;
       }
       const dados = await r.json();
-      localStorage.setItem('kyrius_token', dados.token);
-      if (dados.nome) localStorage.setItem('kyrius_nome', dados.nome);
+      localStorage.setItem('katalli_token', dados.token);
+      if (dados.nome) localStorage.setItem('katalli_nome', dados.nome);
       mostrarChat();
     } catch (err) {
       erro.textContent = 'Erro ao falar com o servidor.';
@@ -527,7 +527,7 @@ export class ChatController {
   });
 
   sair.addEventListener('click', () => {
-    localStorage.removeItem('kyrius_nome');
+    localStorage.removeItem('katalli_nome');
     mostrarLogin('');
   });
 

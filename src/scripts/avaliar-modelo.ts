@@ -1,5 +1,5 @@
 /**
- * Compara modelos na UNICA coisa que o Kyrius nao pode errar: escolher a
+ * Compara modelos na UNICA coisa que o Katalli nao pode errar: escolher a
  * ferramenta certa entre as ~58 registradas.
  *
  * Por que existe: baratear o modelo do chat e uma decisao de margem, mas o
@@ -160,29 +160,29 @@ const CASOS: Caso[] = [
   // --- Sistema / configuracao ---
   {
     pedido: 'quais integracoes eu ja conectei?',
-    esperado: ['kyrius_listar_integracoes'],
+    esperado: ['katalli_listar_integracoes'],
   },
   {
     pedido: 'quero conectar minha conta do HubSpot',
-    esperado: ['kyrius_conectar_integracao'],
+    esperado: ['katalli_conectar_integracao'],
   },
   {
     pedido: 'me avisa toda vez que aparecer um cliente inadimplente novo',
-    esperado: ['kyrius_criar_alerta'],
+    esperado: ['katalli_criar_alerta'],
     escrita: true,
   },
   {
     pedido: 'quais alertas eu tenho ativos?',
-    esperado: ['kyrius_listar_alertas'],
+    esperado: ['katalli_listar_alertas'],
   },
   {
     pedido: 'quero receber um resumo todo dia as 8 da manha',
-    esperado: ['kyrius_configurar_resumo_diario'],
+    esperado: ['katalli_configurar_resumo_diario'],
     escrita: true,
   },
   {
     pedido: 'o que voce fez ontem? mostra o historico de operacoes',
-    esperado: ['kyrius_historico_operacoes'],
+    esperado: ['katalli_historico_operacoes'],
   },
 
   // --- Instagram ---
@@ -283,7 +283,7 @@ async function avaliar(
   // mesmos parametros que a rota `chat` usaria de verdade.
   const router = new ModelRouterService({
     get: (chave: string) =>
-      chave === 'KYRIUS_MODELO_PRINCIPAL' ? modelo : undefined,
+      chave === 'KATALLI_MODELO_PRINCIPAL' ? modelo : undefined,
   } as unknown as ConfigService);
   router.onModuleInit();
   const perfil = router.resolver('chat');

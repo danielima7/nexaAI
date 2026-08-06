@@ -22,7 +22,7 @@ describe('SuporteService (link de WhatsApp)', () => {
   ): SuporteService =>
     new SuporteService({
       get: (chave: string) =>
-        chave === 'KYRIUS_COMERCIAL_WHATSAPP' ? comercial : suporte,
+        chave === 'KATALLI_COMERCIAL_WHATSAPP' ? comercial : suporte,
     } as unknown as ConfigService);
 
   describe('quando nao ha numero utilizavel', () => {

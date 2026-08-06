@@ -5,7 +5,7 @@ import { ModelRouterService } from './model-router.service';
 import { AiUsageService } from './ai-usage.service';
 
 /**
- * Modulo de IA do Kyrius. Exporta o AiService e o ConversationMemoryService
+ * Modulo de IA do Katalli. Exporta o AiService e o ConversationMemoryService
  * para serem usados por outros modulos (ex: WhatsApp, e futuramente Chat Web).
  *
  * ModelRouterService e AiUsageService ficam internos: quem chama a IA escolhe

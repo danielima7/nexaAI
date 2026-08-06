@@ -11,7 +11,7 @@ import { SuporteService } from '../suporte/suporte.service';
  * exatamente em quem esta decidindo se confia dados financeiros a voce.
  *
  * ⚠️ PRIVACIDADE e TERMOS sao rascunhos tecnicos, escritos a partir do que o
- * sistema realmente faz. Eles NAO substituem revisao juridica: o Kyrius trata
+ * sistema realmente faz. Eles NAO substituem revisao juridica: o Katalli trata
  * dados de terceiros como operador (LGPD art. 5, VII) e toca em informacao
  * financeira. Revise com advogado antes do primeiro cliente pagante.
  *
@@ -62,7 +62,7 @@ export class InstitucionalController {
 
   private get email(): string {
     return (
-      this.config.get<string>('KYRIUS_CONTATO_EMAIL') ?? 'contato@kyrius.com'
+      this.config.get<string>('KATALLI_CONTATO_EMAIL') ?? 'contato@katalli.com'
     );
   }
 
@@ -87,9 +87,9 @@ export class InstitucionalController {
     return `
 <h2>Quem somos</h2>
 <p>
-  O Kyrius é operado por ${this.dado('KYRIUS_RAZAO_SOCIAL', 'razão social')},
-  CNPJ ${this.dado('KYRIUS_CNPJ', 'CNPJ')}, com sede em
-  ${this.dado('KYRIUS_ENDERECO', 'endereço')}.
+  O Katalli é operado por ${this.dado('KATALLI_RAZAO_SOCIAL', 'razão social')},
+  CNPJ ${this.dado('KATALLI_CNPJ', 'CNPJ')}, com sede em
+  ${this.dado('KATALLI_ENDERECO', 'endereço')}.
 </p>
 <p>
   Para dúvidas sobre dados pessoais, fale com
@@ -106,7 +106,7 @@ export class InstitucionalController {
     e-mail, empresa. Nós decidimos como tratá-los.
   </li>
   <li>
-    <strong>Somos operadores</strong> dos dados que o Kyrius acessa nos
+    <strong>Somos operadores</strong> dos dados que o Katalli acessa nos
     sistemas que você conecta (clientes, cobranças, e-mails, planilhas). Esses
     dados são seus; nós apenas os consultamos, sob sua instrução, para
     responder ao que você pergunta.
@@ -188,15 +188,15 @@ export class InstitucionalController {
 
   private conteudoTermos(): string {
     return `
-<h2>1. O que é o Kyrius</h2>
+<h2>1. O que é o Katalli</h2>
 <p>
-  O Kyrius é um assistente de inteligência artificial que consulta e opera, sob
+  O Katalli é um assistente de inteligência artificial que consulta e opera, sob
   sua instrução, os sistemas que você conecta a ele. Ele <strong>não substitui
   </strong> esses sistemas: é uma camada de conversa sobre eles.
 </p>
 <p>
-  Serviço prestado por ${this.dado('KYRIUS_RAZAO_SOCIAL', 'razão social')},
-  CNPJ ${this.dado('KYRIUS_CNPJ', 'CNPJ')}.
+  Serviço prestado por ${this.dado('KATALLI_RAZAO_SOCIAL', 'razão social')},
+  CNPJ ${this.dado('KATALLI_CNPJ', 'CNPJ')}.
 </p>
 
 <h2>2. Conta e responsabilidade de acesso</h2>
@@ -210,7 +210,7 @@ export class InstitucionalController {
 <p>
   <strong>Consultar é livre. Alterar exige sua confirmação.</strong> Antes de
   cadastrar, alterar ou enviar qualquer coisa em um sistema conectado, o
-  Kyrius descreve o que fará e aguarda sua autorização explícita.
+  Katalli descreve o que fará e aguarda sua autorização explícita.
 </p>
 <p>
   Ao confirmar, você assume a responsabilidade pela ação — como assumiria se a
@@ -218,7 +218,7 @@ export class InstitucionalController {
 </p>
 
 <h2>4. Uso aceitável</h2>
-<p>Você concorda em não usar o Kyrius para:</p>
+<p>Você concorda em não usar o Katalli para:</p>
 <ul>
   <li>Atividade ilícita ou que viole direitos de terceiros;</li>
   <li>Acessar dados de pessoas ou empresas sem autorização;</li>
@@ -228,7 +228,7 @@ export class InstitucionalController {
 
 <h2>5. Limites da inteligência artificial</h2>
 <p>
-  O Kyrius usa modelos de linguagem, que <strong>podem cometer erros</strong>:
+  O Katalli usa modelos de linguagem, que <strong>podem cometer erros</strong>:
   interpretar mal um pedido, somar errado ou apresentar informação incompleta.
 </p>
 <p>
@@ -244,8 +244,8 @@ export class InstitucionalController {
   específico por escrito, <strong>não há SLA de disponibilidade contratado</strong>.
 </p>
 <p>
-  O Kyrius depende de serviços de terceiros (provedores de IA e as
-  integrações). Indisponibilidade neles afeta o Kyrius.
+  O Katalli depende de serviços de terceiros (provedores de IA e as
+  integrações). Indisponibilidade neles afeta o Katalli.
 </p>
 
 <h2>7. Preço e pagamento</h2>
@@ -267,7 +267,7 @@ export class InstitucionalController {
 
 <h2>9. Propriedade</h2>
 <p>
-  O software e a marca Kyrius são nossos. <strong>Seus dados continuam seus</strong>
+  O software e a marca Katalli são nossos. <strong>Seus dados continuam seus</strong>
   — não adquirimos direito sobre as informações dos seus sistemas.
 </p>
 
@@ -285,7 +285,7 @@ export class InstitucionalController {
 <h2>11. Foro</h2>
 <p>
   Aplica-se a lei brasileira. Fica eleito o foro da comarca de
-  ${this.dado('KYRIUS_COMARCA', 'comarca — cidade/UF')} para dirimir
+  ${this.dado('KATALLI_COMARCA', 'comarca — cidade/UF')} para dirimir
   controvérsias decorrentes destes termos.
 </p>`;
   }
@@ -379,7 +379,7 @@ export class InstitucionalController {
     return `
 <h2>Nosso compromisso</h2>
 <p>
-  O Kyrius deve ser utilizável por qualquer pessoa, inclusive quem usa leitor
+  O Katalli deve ser utilizável por qualquer pessoa, inclusive quem usa leitor
   de tela, navega apenas pelo teclado ou precisa de texto ampliado. Buscamos
   conformidade com as <strong>WCAG 2.1, nível AA</strong>.
 </p>
@@ -443,7 +443,7 @@ export class InstitucionalController {
 <html lang="pt-br"><head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>__TITULO__ — Kyrius</title>
+<title>__TITULO__ — Katalli</title>
 <style>
   :root {
     --breu:#080b14; --painel:#0f1729; --borda:#1e2a44;
@@ -486,7 +486,7 @@ export class InstitucionalController {
 <body>
   <header class="topo">
     <div class="env">
-      <a class="marca" href="/"><span class="selo">K</span> Kyrius</a>
+      <a class="marca" href="/"><span class="selo">K</span> Katalli</a>
     </div>
   </header>
 

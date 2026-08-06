@@ -23,7 +23,7 @@ export interface ConviteAceito {
 /**
  * Convites de acesso ao Chat Web.
  *
- * O fluxo troca "o dono do Kyrius cria a senha do cliente" por "o cliente
+ * O fluxo troca "o dono do Katalli cria a senha do cliente" por "o cliente
  * define a propria senha a partir de um link". Isso tira a credencial das maos
  * de quem vende e do historico do terminal.
  *

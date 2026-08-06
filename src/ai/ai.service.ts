@@ -8,7 +8,7 @@ import { ModelRouterService, RotaIa } from './model-router.service';
 import { AiUsageService } from './ai-usage.service';
 
 /**
- * Service de IA do Kyrius (Claude / Anthropic).
+ * Service de IA do Katalli (Claude / Anthropic).
  *
  * Recebe o historico da conversa e devolve uma resposta inteligente com
  * contexto. Quando ha ferramentas (Tools) registradas, a IA pode decidir
@@ -21,11 +21,11 @@ export class AiService {
   private readonly client: Anthropic;
 
   /**
-   * Prompt de sistema: define a persona e o comportamento do Kyrius.
+   * Prompt de sistema: define a persona e o comportamento do Katalli.
    * Mantido conciso de proposito (respostas por WhatsApp devem ser curtas).
    */
   private readonly systemPrompt = [
-    'Voce e o Kyrius, um assistente de IA corporativo que atende empresas pelo WhatsApp.',
+    'Voce e o Katalli, um assistente de IA corporativo que atende empresas pelo WhatsApp.',
     'Responda em portugues do Brasil, de forma clara, cordial e objetiva.',
     'Voce tem memoria da conversa: as mensagens anteriores deste contato estao no',
     'historico. Use esse contexto naturalmente e lembre do que foi dito. Nao diga',

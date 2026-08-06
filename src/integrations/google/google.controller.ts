@@ -69,7 +69,7 @@ export class GoogleController {
         res.send(
           `<html><body style="font-family:sans-serif;max-width:640px;margin:40px auto">
             <h2>✅ Google conectado!</h2>
-            <p>Sua conta Google foi conectada ao Kyrius para a sua organizacao.
+            <p>Sua conta Google foi conectada ao Katalli para a sua organizacao.
             Pode fechar esta pagina e voltar ao WhatsApp.</p>
           </body></html>`,
         );

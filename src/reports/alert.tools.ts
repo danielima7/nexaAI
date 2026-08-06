@@ -30,7 +30,7 @@ export class AlertTools implements OnModuleInit {
   onModuleInit(): void {
     this.registry.register({
       definition: {
-        name: 'kyrius_criar_alerta',
+        name: 'katalli_criar_alerta',
         description:
           'Cria um alerta que avisa o usuario por e-mail quando algo mudar (ex: novo cliente inadimplente, boleto vencido, queda de saldo, novos seguidores). Escolha em "ferramenta" o nome de uma ferramenta de CONSULTA existente que responda ao que ele quer acompanhar. Use quando o usuario pedir para ser avisado, monitorar ou acompanhar algo.',
         input_schema: {
@@ -98,7 +98,7 @@ export class AlertTools implements OnModuleInit {
 
     this.registry.register({
       definition: {
-        name: 'kyrius_listar_alertas',
+        name: 'katalli_listar_alertas',
         description:
           'Lista os alertas configurados pela organizacao. Use quando o usuario perguntar o que esta sendo monitorado ou quais avisos ele criou.',
         input_schema: { type: 'object', properties: {} },
@@ -130,7 +130,7 @@ export class AlertTools implements OnModuleInit {
 
     this.registry.register({
       definition: {
-        name: 'kyrius_remover_alerta',
+        name: 'katalli_remover_alerta',
         description:
           'Remove um alerta pelo numero mostrado na listagem. Use quando o usuario pedir para parar de receber um aviso.',
         input_schema: {

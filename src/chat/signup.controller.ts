@@ -17,7 +17,7 @@ import { ChatAuthService } from './chat-auth.service';
  * Cadastro aberto: `GET /criar-conta` serve a pagina, `POST /criar-conta`
  * cria a conta e ja devolve a sessao — o visitante cai direto no chat.
  *
- * Quando a rota esta desligada (KYRIUS_AUTOCADASTRO != true) o GET responde
+ * Quando a rota esta desligada (KATALLI_AUTOCADASTRO != true) o GET responde
  * 404 em vez de uma pagina de "indisponivel". Uma rota desligada nao deveria
  * anunciar que existe: quem varre endpoints procurando cadastro aberto merece
  * um 404, nao uma pista.
@@ -45,7 +45,7 @@ export class SignupController {
     const nota =
       limite === null
         ? 'Voce cria a conta e ja comeca a usar. Precisando de ajuda para conectar seus sistemas, fale com a gente.'
-        : `A conta gratuita inclui <strong>${limite} mensagens</strong> para voce conhecer o Kyrius. ` +
+        : `A conta gratuita inclui <strong>${limite} mensagens</strong> para voce conhecer o Katalli. ` +
           'Depois disso, e so falar com a gente para liberar o uso completo — seus dados e integracoes continuam onde estao.';
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -93,7 +93,7 @@ export class SignupController {
 <html lang="pt-br"><head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Criar conta — Kyrius</title>
+<title>Criar conta — Katalli</title>
 <style>
   :root { --breu:#080b14; --painel:#0f1729; --borda:#1e2a44; --tinta:#e8edf7;
           --tinta-fraca:#94a3b8; --azul:#2563eb; --azul-vivo:#3b82f6; --erro:#f87171; }
@@ -122,7 +122,7 @@ export class SignupController {
 <body>
   <div class="caixa">
     <h1>Criar sua conta</h1>
-    <p class="sub">Em um minuto voce ja esta conversando com o Kyrius.</p>
+    <p class="sub">Em um minuto voce ja esta conversando com o Katalli.</p>
 
     <form id="formulario">
       <label for="empresa">Nome da empresa</label>
@@ -177,8 +177,8 @@ export class SignupController {
         enviar.disabled = false;
         return;
       }
-      localStorage.setItem('kyrius_token', dados.token);
-      if (dados.nome) localStorage.setItem('kyrius_nome', dados.nome);
+      localStorage.setItem('katalli_token', dados.token);
+      if (dados.nome) localStorage.setItem('katalli_nome', dados.nome);
       location.href = '/chat';
     } catch (err) {
       erro.textContent = 'Erro ao falar com o servidor.';

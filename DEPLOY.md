@@ -1,4 +1,4 @@
-# Deploy do Kyrius em VPS
+# Deploy do Katalli em VPS
 
 Sobe a aplicacao, o Postgres e o proxy com TLS em uma VPS Linux.
 Testado com Hetzner CX22 (2 vCPU, 4 GB) + Ubuntu 24.04 + dominio `.com.br`.
@@ -24,9 +24,9 @@ Anote o IPv4. Depois, como root:
 
 ```bash
 # Usuario sem privilegio para rodar a aplicacao
-adduser --disabled-password --gecos "" kyrius
-usermod -aG sudo,docker kyrius 2>/dev/null || usermod -aG sudo kyrius
-rsync --archive --chown=kyrius:kyrius ~/.ssh /home/kyrius
+adduser --disabled-password --gecos "" katalli
+usermod -aG sudo,docker katalli 2>/dev/null || usermod -aG sudo katalli
+rsync --archive --chown=katalli:katalli ~/.ssh /home/katalli
 
 # Firewall: so SSH e HTTP(S). O Postgres NAO entra aqui — ele nunca deve
 # ser alcancavel de fora, e como nao publica porta, tambem nao seria.
@@ -39,10 +39,10 @@ systemctl restart ssh
 
 # Docker
 curl -fsSL https://get.docker.com | sh
-usermod -aG docker kyrius
+usermod -aG docker katalli
 ```
 
-Saia e entre de novo como `kyrius` (o grupo docker so vale em sessao nova).
+Saia e entre de novo como `katalli` (o grupo docker so vale em sessao nova).
 
 ## 3. DNS
 
@@ -60,8 +60,8 @@ Confirme com `dig +short seudominio.com.br` (deve devolver o IP da VPS).
 ## 4. Codigo e configuracao
 
 ```bash
-git clone https://github.com/danielima7/nexaAI.git kyrius
-cd kyrius
+git clone https://github.com/danielima7/nexaAI.git katalli
+cd katalli
 ```
 
 Crie o `.env` (copie de `.env.example` e preencha). Diferencas em relacao ao
@@ -84,7 +84,7 @@ Depois, o dominio do proxy:
 
 ```bash
 cp .env.caddy.example .env.caddy
-nano .env.caddy   # KYRIUS_DOMINIO=seudominio.com.br  (sem https://, sem barra final)
+nano .env.caddy   # KATALLI_DOMINIO=seudominio.com.br  (sem https://, sem barra final)
 ```
 
 ## 5. Subir
@@ -111,10 +111,10 @@ navegador deve estar valido.
 
 ## 6. Depois do primeiro deploy
 
-- **Google Cloud Console** → Credenciais → cliente OAuth "Kyrius Web": adicione
+- **Google Cloud Console** → Credenciais → cliente OAuth "Katalli Web": adicione
   `https://seudominio.com.br/google/callback` aos URIs de redirecionamento
   autorizados. Sem isso o Google devolve `redirect_uri_mismatch`.
-- **Reconecte o Google** pelo chat (`kyrius_conectar_google`): o refresh token
+- **Reconecte o Google** pelo chat (`katalli_conectar_google`): o refresh token
   antigo foi emitido para a URI do ngrok.
 - **Crie o acesso ao chat**: veja *Operação → Dar acesso a um cliente*, abaixo.
 
@@ -166,7 +166,7 @@ container da aplicacao. Em producao, extraia direto do servico do Postgres:
 ```bash
 mkdir -p backups
 docker compose -f docker-compose.prod.yml exec -T postgres \
-  pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" > "backups/kyrius-$(date +%F-%H%M).sql"
+  pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" > "backups/katalli-$(date +%F-%H%M).sql"
 ```
 
 Para automatizar, coloque no crontab do servidor (`crontab -e`), diariamente
@@ -174,7 +174,7 @@ as 3h — e **copie o arquivo para fora da VPS**, senao o backup morre junto com
 ela:
 
 ```
-0 3 * * * cd /home/kyrius/kyrius && docker compose -f docker-compose.prod.yml exec -T postgres pg_dump -U nexa -d nexa > backups/kyrius-$(date +\\%F).sql
+0 3 * * * cd /home/katalli/katalli && docker compose -f docker-compose.prod.yml exec -T postgres pg_dump -U nexa -d nexa > backups/katalli-$(date +\\%F).sql
 ```
 
 **Backup e responsabilidade sua, nao da Hetzner.** Snapshot de VPS protege

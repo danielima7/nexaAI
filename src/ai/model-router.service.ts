@@ -93,7 +93,7 @@ const MAX_TOKENS: Record<Faixa, number> = {
 /**
  * Esforco pedido na faixa principal, quando o modelo aceita o parametro.
  *
- * `medium` porque o trabalho do Kyrius e escolher entre ferramentas conhecidas
+ * `medium` porque o trabalho do Katalli e escolher entre ferramentas conhecidas
  * e resumir o retorno — nao raciocinio longo. O padrao da API e `high`, que
  * gera tokens de raciocinio cobrados como saida sem ganho pratico aqui.
  */
@@ -121,11 +121,11 @@ export class ModelRouterService implements OnModuleInit {
     // instalacoes existentes nem o .env de producao.
     this.modeloPorFaixa = {
       principal:
-        this.config.get<string>('KYRIUS_MODELO_PRINCIPAL') ??
+        this.config.get<string>('KATALLI_MODELO_PRINCIPAL') ??
         this.config.get<string>('ANTHROPIC_MODEL') ??
         'claude-opus-4-8',
       economico:
-        this.config.get<string>('KYRIUS_MODELO_ECONOMICO') ??
+        this.config.get<string>('KATALLI_MODELO_ECONOMICO') ??
         'claude-haiku-4-5',
     };
   }

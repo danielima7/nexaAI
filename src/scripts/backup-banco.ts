@@ -1,5 +1,5 @@
 /**
- * Backup do banco do Kyrius.
+ * Backup do banco do Katalli.
  *
  * Uso:
  *   npm run banco:backup
@@ -39,7 +39,7 @@ function main(): void {
 
   if (!existsSync(destino)) mkdirSync(destino, { recursive: true });
 
-  const arquivo = join(destino, `kyrius-${carimbo()}.sql`);
+  const arquivo = join(destino, `katalli-${carimbo()}.sql`);
 
   console.log(`Gerando backup de "${banco}" (container ${container})...`);
   let dump: Buffer;
@@ -66,7 +66,7 @@ function main(): void {
   const limite = Date.now() - reterDias * 24 * 60 * 60 * 1000;
   let removidos = 0;
   for (const nome of readdirSync(destino)) {
-    if (!nome.startsWith('kyrius-') || !nome.endsWith('.sql')) continue;
+    if (!nome.startsWith('katalli-') || !nome.endsWith('.sql')) continue;
     const caminho = join(destino, nome);
     if (statSync(caminho).mtimeMs < limite) {
       unlinkSync(caminho);

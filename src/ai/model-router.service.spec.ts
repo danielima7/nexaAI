@@ -33,8 +33,8 @@ describe('ModelRouterService (politica de modelo por rota)', () => {
       'rota "%s" escolhe ferramentas, entao usa a faixa principal',
       (rota) => {
         const router = criar({
-          KYRIUS_MODELO_PRINCIPAL: 'claude-sonnet-5',
-          KYRIUS_MODELO_ECONOMICO: 'claude-haiku-4-5',
+          KATALLI_MODELO_PRINCIPAL: 'claude-sonnet-5',
+          KATALLI_MODELO_ECONOMICO: 'claude-haiku-4-5',
         });
         expect(router.resolver(rota).model).toBe('claude-sonnet-5');
       },
@@ -44,8 +44,8 @@ describe('ModelRouterService (politica de modelo por rota)', () => {
       'rota "%s" nao escolhe ferramenta, entao usa a faixa economica',
       (rota) => {
         const router = criar({
-          KYRIUS_MODELO_PRINCIPAL: 'claude-sonnet-5',
-          KYRIUS_MODELO_ECONOMICO: 'claude-haiku-4-5',
+          KATALLI_MODELO_PRINCIPAL: 'claude-sonnet-5',
+          KATALLI_MODELO_ECONOMICO: 'claude-haiku-4-5',
         });
         expect(router.resolver(rota).model).toBe('claude-haiku-4-5');
       },
@@ -54,12 +54,12 @@ describe('ModelRouterService (politica de modelo por rota)', () => {
 
   describe('parametros por geracao de modelo', () => {
     it('nao manda effort para Haiku 4.5: a geracao 4.5 devolve 400', () => {
-      const router = criar({ KYRIUS_MODELO_ECONOMICO: 'claude-haiku-4-5' });
+      const router = criar({ KATALLI_MODELO_ECONOMICO: 'claude-haiku-4-5' });
       expect(router.resolver('alerta').outputConfig).toBeUndefined();
     });
 
     it('manda effort quando o modelo da faixa principal aceita', () => {
-      const router = criar({ KYRIUS_MODELO_PRINCIPAL: 'claude-sonnet-5' });
+      const router = criar({ KATALLI_MODELO_PRINCIPAL: 'claude-sonnet-5' });
       expect(router.resolver('chat').outputConfig).toEqual({
         effort: 'medium',
       });
@@ -67,7 +67,7 @@ describe('ModelRouterService (politica de modelo por rota)', () => {
 
     it('mesmo na faixa principal, nao manda effort a um modelo que nao aceita', () => {
       // Cenario real: alguem coloca um modelo barato como principal para testar.
-      const router = criar({ KYRIUS_MODELO_PRINCIPAL: 'claude-haiku-4-5' });
+      const router = criar({ KATALLI_MODELO_PRINCIPAL: 'claude-haiku-4-5' });
       expect(router.resolver('chat').outputConfig).toBeUndefined();
     });
   });
@@ -101,10 +101,10 @@ describe('ModelRouterService (politica de modelo por rota)', () => {
       expect(router.resolver('chat').model).toBe('claude-opus-4-8');
     });
 
-    it('KYRIUS_MODELO_PRINCIPAL tem precedencia sobre ANTHROPIC_MODEL', () => {
+    it('KATALLI_MODELO_PRINCIPAL tem precedencia sobre ANTHROPIC_MODEL', () => {
       const router = criar({
         ANTHROPIC_MODEL: 'claude-opus-4-8',
-        KYRIUS_MODELO_PRINCIPAL: 'claude-sonnet-5',
+        KATALLI_MODELO_PRINCIPAL: 'claude-sonnet-5',
       });
       expect(router.resolver('chat').model).toBe('claude-sonnet-5');
     });

@@ -40,7 +40,7 @@ export class GoogleTools implements OnModuleInit {
     // Ferramenta para gerar o link de conexao (OAuth) da organizacao.
     this.registry.register({
       definition: {
-        name: 'kyrius_conectar_google',
+        name: 'katalli_conectar_google',
         description:
           'Gera o link para o usuario conectar a propria conta Google (Gmail + Agenda) a sua organizacao. Use quando o usuario pedir para conectar/autorizar o Google.',
         input_schema: { type: 'object', properties: {} },

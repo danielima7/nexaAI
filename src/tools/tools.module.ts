@@ -7,7 +7,7 @@ import { SystemTools } from './system-tools';
  *
  * E @Global para que qualquer modulo de integracao possa injetar o
  * ToolRegistryService e registrar suas ferramentas sem importar este modulo.
- * Tambem registra as ferramentas de sistema do proprio Kyrius (SystemTools).
+ * Tambem registra as ferramentas de sistema do proprio Katalli (SystemTools).
  */
 @Global()
 @Module({

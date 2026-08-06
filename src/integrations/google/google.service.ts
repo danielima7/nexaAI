@@ -6,7 +6,7 @@ import { google } from 'googleapis';
  * Service da integracao com o Google (Gmail + Google Agenda/Calendar).
  *
  * Tambem funciona como provedor de autenticacao para os demais produtos
- * Google do Kyrius (ex: SheetsService), que reutilizam o mesmo consentimento.
+ * Google do Katalli (ex: SheetsService), que reutilizam o mesmo consentimento.
  *
  * Multi-tenant: o client_id/client_secret sao do app (globais), mas o
  * refresh_token e POR ORGANIZACAO. Cada metodo recebe o refreshToken da org

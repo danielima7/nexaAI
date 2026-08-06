@@ -14,7 +14,7 @@ export interface PlanilhaExtraida {
  *
  * POR QUE ISSO EXISTE: boa parte da PME brasileira nao usa Google Sheets — usa
  * um .xlsx no computador. Sem isso, esse cliente precisaria migrar de
- * ferramenta antes de conseguir usar o Kyrius.
+ * ferramenta antes de conseguir usar o Katalli.
  *
  * Guardamos apenas o TEXTO extraido, nunca o binario: e o que a IA le, ocupa
  * uma fracao do espaco, entra no backup normalmente e dispensa storage externo.

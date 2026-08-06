@@ -60,7 +60,7 @@ export class InstagramTools implements OnModuleInit {
     // Link de conexao (OAuth) da organizacao.
     this.registry.register({
       definition: {
-        name: 'kyrius_conectar_instagram',
+        name: 'katalli_conectar_instagram',
         description:
           'Gera o link para o usuario conectar a propria conta do Instagram (Business/Creator) a sua organizacao. Use quando o usuario pedir para conectar/autorizar o Instagram.',
         input_schema: { type: 'object', properties: {} },

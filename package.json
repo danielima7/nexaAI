@@ -1,7 +1,7 @@
 {
-  "name": "kyrius-backend",
+  "name": "katalli-backend",
   "version": "0.1.0",
-  "description": "Kyrius - Hub Universal de Integracoes Inteligentes (backend)",
+  "description": "Katalli - Hub Universal de Integracoes Inteligentes (backend)",
   "private": true,
   "scripts": {
     "build": "nest build",

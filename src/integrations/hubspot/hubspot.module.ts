@@ -5,7 +5,7 @@ import { HubspotTools } from './hubspot.tools';
 /**
  * Modulo isolado da integracao com o HubSpot (CRM).
  *
- * Segue a filosofia do Kyrius: cada integracao e um modulo independente.
+ * Segue a filosofia do Katalli: cada integracao e um modulo independente.
  * Ao ser carregado, registra suas ferramentas no ToolRegistry (global),
  * dando novas capacidades a IA sem alterar o modulo de IA.
  */

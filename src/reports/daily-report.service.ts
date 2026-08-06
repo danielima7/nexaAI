@@ -19,7 +19,7 @@ export interface DestinoResumo {
 }
 
 /**
- * Resumo diario proativo: o Kyrius manda o panorama do negocio sozinho, no
+ * Resumo diario proativo: o Katalli manda o panorama do negocio sozinho, no
  * horario que a organizacao escolheu, sem ninguem perguntar nada.
  *
  * O texto NAO e montado por codigo. Mandamos uma instrucao para a propria IA,
@@ -126,7 +126,7 @@ export class DailyReportService {
 
     await this.notificacao.enviarEmail(
       destino.organizationId,
-      `Kyrius — resumo de ${hoje}`,
+      `Katalli — resumo de ${hoje}`,
       texto,
       para,
     );

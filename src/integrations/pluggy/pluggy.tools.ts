@@ -47,7 +47,7 @@ export class PluggyTools implements OnModuleInit {
 
     this.registry.register({
       definition: {
-        name: 'kyrius_conectar_banco',
+        name: 'katalli_conectar_banco',
         description:
           'Gera o link para o usuario conectar um BANCO REAL via Open Finance (widget Pluggy Connect, com consentimento no proprio banco). Use quando o usuario pedir para conectar o banco dele / uma conta bancaria real.',
         input_schema: { type: 'object', properties: {} },
@@ -63,7 +63,7 @@ export class PluggyTools implements OnModuleInit {
 
     this.registry.register({
       definition: {
-        name: 'kyrius_conectar_banco_teste',
+        name: 'katalli_conectar_banco_teste',
         description:
           'Conecta um banco de TESTE (sandbox do Pluggy) para a organizacao, permitindo consultar contas, saldos e transacoes. Use quando o usuario pedir para conectar um banco de teste / Open Finance.',
         input_schema: { type: 'object', properties: {} },

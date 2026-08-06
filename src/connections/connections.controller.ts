@@ -132,7 +132,7 @@ export class ConnectionsController {
 <html lang="pt-br"><head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Kyrius — Integracoes</title>
+<title>Katalli — Integracoes</title>
 <style>
   :root { --bg:#0f172a; --panel:#111827; --accent:#7c3aed; --text:#e5e7eb; --muted:#9ca3af; --erro:#f87171; --ok:#34d399; --linha:#1f2937; }
   * { box-sizing:border-box; }
@@ -191,7 +191,7 @@ export class ConnectionsController {
   </main>
 
 <script>
-  const token = localStorage.getItem('kyrius_token');
+  const token = localStorage.getItem('katalli_token');
   const carregando = document.getElementById('carregando');
   const semSessao = document.getElementById('semSessao');
   const conteudo = document.getElementById('conteudo');
@@ -327,7 +327,7 @@ export class ConnectionsController {
     botao.className = 'secundario desconectar';
     botao.textContent = 'Desconectar';
     botao.onclick = async () => {
-      if (!confirm('Desconectar ' + item.nome + '? O Kyrius deixara de acessar esses dados.')) return;
+      if (!confirm('Desconectar ' + item.nome + '? O Katalli deixara de acessar esses dados.')) return;
       botao.disabled = true;
       try {
         const r = await api('/integracoes/' + item.id, { method:'DELETE' });

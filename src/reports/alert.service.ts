@@ -155,7 +155,7 @@ export class AlertService {
 
     await this.notificacao.enviarEmail(
       alerta.organizationId,
-      `Kyrius — alerta: ${alerta.descricao}`,
+      `Katalli — alerta: ${alerta.descricao}`,
       texto,
     );
 

@@ -36,7 +36,7 @@ export class SignupService {
 
   private static readonly FORMATO_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  /** Teto padrao quando KYRIUS_AUTOCADASTRO_LIMITE nao esta configurado. */
+  /** Teto padrao quando KATALLI_AUTOCADASTRO_LIMITE nao esta configurado. */
   private static readonly LIMITE_PADRAO = 20;
 
   constructor(
@@ -55,7 +55,7 @@ export class SignupService {
    */
   get habilitado(): boolean {
     return (
-      (this.config.get<string>('KYRIUS_AUTOCADASTRO') ?? '')
+      (this.config.get<string>('KATALLI_AUTOCADASTRO') ?? '')
         .trim()
         .toLowerCase() === 'true'
     );
@@ -71,7 +71,7 @@ export class SignupService {
    * sozinho.
    */
   get limite(): number | null {
-    const bruto = (this.config.get<string>('KYRIUS_AUTOCADASTRO_LIMITE') ?? '')
+    const bruto = (this.config.get<string>('KATALLI_AUTOCADASTRO_LIMITE') ?? '')
       .trim()
       .toLowerCase();
 

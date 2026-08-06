@@ -1,4 +1,4 @@
-# Imagem de producao do backend do Kyrius.
+# Imagem de producao do backend do Katalli.
 #
 # Build em dois estagios: o primeiro compila (precisa das devDependencies e do
 # codigo TypeScript); o segundo carrega apenas o necessario para rodar. Isso

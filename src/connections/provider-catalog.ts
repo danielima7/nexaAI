@@ -88,7 +88,7 @@ export const PROVEDORES: ProvedorConectavel[] = [
     categoria: 'Produtividade',
     tipo: 'oauth',
     ajuda:
-      'Voce sera levado ao Google para autorizar. Marque todas as permissoes para o Kyrius conseguir ler e escrever nas suas planilhas.',
+      'Voce sera levado ao Google para autorizar. Marque todas as permissoes para o Katalli conseguir ler e escrever nas suas planilhas.',
     rotaOAuth: '/google/auth',
   },
   {
