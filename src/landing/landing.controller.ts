@@ -440,7 +440,6 @@ Confirma o envio?</div>
       <div><strong>Google</strong><small>Gmail, Agenda e Planilhas do Google</small></div>
       <div><strong>Stripe</strong><small>Recebimentos, saldo e pagamentos online</small></div>
       <div><strong>Mercado Pago</strong><small>Pagamentos recebidos e detalhamento</small></div>
-      <div><strong>Pagar.me</strong><small>Pedidos, pagamentos e clientes</small></div>
       <div><strong>Contas bancárias</strong><small>Saldo e extrato via Open Finance</small></div>
       <div><strong>Instagram</strong><small>Métricas e desempenho da conta</small></div>
       <div><strong>Suas planilhas</strong><small>Envie um Excel ou CSV no chat e pergunte sobre ele</small></div>

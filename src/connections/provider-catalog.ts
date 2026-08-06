@@ -73,15 +73,6 @@ export const PROVEDORES: ProvedorConectavel[] = [
     formato: 'APP_USR-...',
   },
   {
-    id: 'pagarme',
-    sugestoes: ["Lista meus ultimos pedidos"],
-    nome: 'Pagar.me',
-    categoria: 'Pagamentos',
-    tipo: 'token',
-    ajuda: 'No Pagar.me: Configuracoes → Chaves → Chave secreta.',
-    formato: 'sk_...',
-  },
-  {
     id: 'google',
     sugestoes: ["Lista minhas planilhas", "Quais meus proximos compromissos?"],
     nome: 'Google (Planilhas, Drive e Agenda)',

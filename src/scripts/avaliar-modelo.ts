@@ -30,7 +30,6 @@ import { SheetsTools } from '../integrations/google/sheets.tools';
 import { HubspotTools } from '../integrations/hubspot/hubspot.tools';
 import { InstagramTools } from '../integrations/instagram/instagram.tools';
 import { MercadopagoTools } from '../integrations/mercadopago/mercadopago.tools';
-import { PagarmeTools } from '../integrations/pagarme/pagarme.tools';
 import { PluggyTools } from '../integrations/pluggy/pluggy.tools';
 import { StripeTools } from '../integrations/stripe/stripe.tools';
 import { AlertTools } from '../reports/alert.tools';
@@ -83,10 +82,6 @@ const CASOS: Caso[] = [
   {
     pedido: 'quanto recebi no mercado pago?',
     esperado: ['mercadopago_total_recebido', 'mercadopago_listar_pagamentos'],
-  },
-  {
-    pedido: 'lista os pedidos do pagarme',
-    esperado: ['pagarme_listar_pedidos'],
   },
 
   // --- CRM: leitura ---
@@ -235,7 +230,6 @@ function montarRegistry(): ToolRegistryService {
     HubspotTools,
     InstagramTools,
     MercadopagoTools,
-    PagarmeTools,
     PluggyTools,
     StripeTools,
     AlertTools,
