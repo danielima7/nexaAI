@@ -309,7 +309,9 @@ export class ChatController {
       this.paginaCache = ChatController.HTML.replace(
         '<!--BOTAO_SUPORTE-->',
         botao,
-      );
+      )
+        .replace('__LOGO_TOPO__', ChatController.logo('katalliGradTopo'))
+        .replace('__LOGO_LOGIN__', ChatController.logo('katalliGradLogin'));
     }
 
     return this.paginaCache;
@@ -322,73 +324,158 @@ export class ChatController {
     res.send(this.pagina);
   }
 
+  /**
+   * Simbolo da marca. Mesmo SVG da landing e das paginas institucionais —
+   * inline para a pagina nao depender de nenhum arquivo externo.
+   */
+  private static logo(id: string): string {
+    // O gradiente precisa de id UNICO por ocorrencia: a logo aparece no
+    // cabecalho e na tela de login, e dois <linearGradient> com o mesmo id
+    // tornam o documento invalido — alguns navegadores resolvem, outros
+    // pintam o segundo simbolo com o gradiente errado.
+    return `<svg viewBox="0 0 210 128" role="img" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="${id}" x1="0" y1="0.5" x2="1" y2="0.35">
+      <stop offset="0%" stop-color="#1d4ed8"/><stop offset="38%" stop-color="#0ea5e9"/>
+      <stop offset="62%" stop-color="#10b981"/><stop offset="100%" stop-color="#84cc16"/>
+    </linearGradient>
+  </defs>
+  <g fill="none" stroke="url(#${id})" stroke-width="21" stroke-linecap="square">
+    <path d="M105,64 C105,36 84,20 62,20 C36,20 16,39 16,64 C16,89 36,108 62,108 C84,108 105,92 105,64 C105,36 126,20 148,20 C174,20 194,39 194,64 C194,89 174,108 148,108"/>
+    <path d="M119,52 L186,124"/>
+  </g>
+</svg>`;
+  }
+
   private static readonly HTML = `<!doctype html>
 <html lang="pt-br"><head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Katalli — Chat</title>
 <style>
-  :root { --bg:#0f172a; --panel:#111827; --accent:#7c3aed; --me:#7c3aed; --bot:#1f2937; --text:#e5e7eb; --muted:#9ca3af; --erro:#f87171; }
+  /* Mesma paleta da landing e das paginas institucionais. O chat vinha de uma
+     paleta roxa anterior a marca; produto e site em cores diferentes e o tipo
+     de detalhe que faz um SaaS parecer amador sem ninguem saber apontar por que. */
+  :root {
+    --breu:#080b14; --painel:#0f1729; --painel-alto:#151f36;
+    --borda:#1e2a44; --borda-forte:#2c3b5c;
+    --tinta:#e8edf7; --tinta-fraca:#94a3b8; --tinta-tenue:#73839b;
+    --azul:#2563eb; --azul-vivo:#3b82f6;
+    --verde:#22c55e; --erro:#f87171;
+    /* Alias mantidos: o CSS antigo e o JS referenciam estes nomes. */
+    --accent:#2563eb; --muted:#94a3b8; --text:#e8edf7;
+  }
   * { box-sizing:border-box; }
-  body { margin:0; font-family:-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; }
-  header { padding:16px 20px; background:var(--panel); border-bottom:1px solid #1f2937; display:flex; align-items:center; gap:10px; }
-  /* O simbolo e um link para a tela principal — e o que todo mundo tenta
-     clicar quando quer voltar. Como <a>, funciona com teclado e com abrir em
-     nova aba, o que um <div> com onclick nao daria. */
-  header .logo { width:32px; height:32px; border-radius:8px; background:var(--accent); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; text-decoration:none; flex:none; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+         background:var(--breu); color:var(--tinta); height:100dvh; display:flex; flex-direction:column;
+         -webkit-font-smoothing:antialiased; }
+  ::selection { background:var(--azul); color:#fff; }
+
+  /* Barra de rolagem discreta: a padrao do Windows corta a estetica escura. */
+  #messages::-webkit-scrollbar { width:10px; }
+  #messages::-webkit-scrollbar-track { background:transparent; }
+  #messages::-webkit-scrollbar-thumb { background:var(--borda); border-radius:99px; border:3px solid var(--breu); }
+  #messages::-webkit-scrollbar-thumb:hover { background:var(--borda-forte); }
+
+  /* ---------------------------------------------------------- cabecalho */
+  header { padding:12px 20px; background:rgba(8,11,20,.88); backdrop-filter:blur(12px);
+           border-bottom:1px solid var(--borda); display:flex; align-items:center; gap:12px;
+           position:sticky; top:0; z-index:5; }
+  /* Sem largura fixa: o simbolo e largo (proporcao ~1.6:1) e um container
+     quadrado o espremeria. */
+  header .logo { display:flex; align-items:center; flex:none; text-decoration:none;
+                 border-radius:8px; padding:2px; }
+  header .logo svg { width:38px; height:auto; display:block; }
   header .logo:hover { filter:brightness(1.15); }
-  header .logo:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
-  header h1 { font-size:18px; margin:0; }
-  header small { color:var(--muted); font-weight:400; }
+  header .logo:focus-visible { outline:2px solid var(--azul-vivo); outline-offset:3px; }
+  header h1 { font-size:17px; margin:0; font-weight:650; letter-spacing:-.01em; }
+  header small { color:var(--tinta-fraca); font-weight:400; }
   header .acoes { margin-left:auto; display:flex; gap:8px; align-items:center; }
-  header .sair, header .integracoes { background:none; border:1px solid #374151; color:var(--muted); padding:6px 12px; border-radius:8px; font-size:13px; cursor:pointer; text-decoration:none; display:inline-block; }
-  /* Verde do WhatsApp: e o unico elemento colorido do cabecalho, entao vira o
-     caminho obvio quando algo da errado — que e o comportamento que queremos
-     estimular no piloto. */
-  header .suporte { display:inline-flex; align-items:center; gap:6px; background:none; border:1px solid #25603f; color:#4ade80; padding:6px 12px; border-radius:8px; font-size:13px; text-decoration:none; white-space:nowrap; }
+  header .sair, header .integracoes {
+    background:none; border:1px solid var(--borda-forte); color:var(--tinta-fraca);
+    padding:7px 13px; border-radius:9px; font-size:13px; cursor:pointer;
+    text-decoration:none; display:inline-block; transition:border-color .15s, color .15s; }
+  header .sair:hover, header .integracoes:hover { border-color:var(--tinta-fraca); color:var(--tinta); }
+  header .sair:focus-visible, header .integracoes:focus-visible { outline:2px solid var(--azul-vivo); outline-offset:2px; }
+  /* Verde do WhatsApp: unico elemento colorido do cabecalho, entao vira o
+     caminho obvio quando algo da errado. */
+  header .suporte { display:inline-flex; align-items:center; gap:6px; background:none;
+    border:1px solid #1d5236; color:#4ade80; padding:7px 13px; border-radius:9px;
+    font-size:13px; text-decoration:none; white-space:nowrap; transition:border-color .15s, color .15s; }
   header .suporte:hover { border-color:#25d366; color:#25d366; }
-  /* Em tela estreita sobra so o icone: com tres itens, o texto empurraria o
-     cabecalho e quebraria a linha no celular — que e onde o dono vai abrir. */
-  @media (max-width:520px) { header .suporte span { display:none; } }
-  #messages { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:12px; max-width:820px; width:100%; margin:0 auto; }
-  .msg { padding:10px 14px; border-radius:14px; max-width:78%; white-space:pre-wrap; line-height:1.4; }
-  .me { align-self:flex-end; background:var(--me); color:#fff; border-bottom-right-radius:4px; }
-  .bot { align-self:flex-start; background:var(--bot); border-bottom-left-radius:4px; }
-  .typing { color:var(--muted); font-style:italic; }
-  #sugestoes { display:flex; flex-wrap:wrap; gap:8px; align-self:flex-start; max-width:78%; margin-top:-4px; }
-  #sugestoes button { background:none; border:1px solid #374151; color:var(--muted); padding:8px 14px; border-radius:20px; font-size:13px; font-weight:400; cursor:pointer; text-align:left; }
-  #sugestoes button:hover { border-color:var(--accent); color:var(--text); }
-  form { display:flex; gap:10px; padding:16px; background:var(--panel); border-top:1px solid #1f2937; max-width:820px; width:100%; margin:0 auto; }
-  input { flex:1; padding:12px 14px; border-radius:10px; border:1px solid #374151; background:#0b1220; color:var(--text); font-size:15px; }
-  input:focus { outline:none; border-color:var(--accent); }
-  button { padding:0 18px; border-radius:10px; border:none; background:var(--accent); color:#fff; font-weight:600; cursor:pointer; }
-  button:disabled { opacity:.5; cursor:default; }
-  .anexo { background:none; border:1px solid #374151; color:var(--muted); padding:0 14px; font-size:17px; }
-  .anexo:hover { border-color:var(--accent); }
-  #login { position:fixed; inset:0; background:var(--bg); display:flex; align-items:center; justify-content:center; z-index:10; }
-  #login .caixa { background:var(--panel); padding:32px; border-radius:16px; width:min(380px,90vw); border:1px solid #1f2937; }
-  #login h2 { margin:0 0 6px; font-size:20px; }
-  #login p { margin:0 0 20px; color:var(--muted); font-size:14px; }
-  #login form { padding:0; background:none; border:none; flex-direction:column; gap:12px; }
+  header .suporte:focus-visible { outline:2px solid #25d366; outline-offset:2px; }
+  @media (max-width:560px) { header .suporte span { display:none; } header h1 { font-size:16px; } }
+
+  /* ------------------------------------------------------------ conversa */
+  #messages { flex:1; overflow-y:auto; padding:28px 20px; display:flex; flex-direction:column;
+              gap:14px; max-width:820px; width:100%; margin:0 auto; }
+  .msg { padding:12px 16px; border-radius:16px; max-width:78%; white-space:pre-wrap;
+         line-height:1.55; font-size:15.5px; animation:surge .22s ease-out; }
+  @keyframes surge { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+  .me { align-self:flex-end; background:var(--azul); color:#fff; border-bottom-right-radius:5px;
+        box-shadow:0 4px 14px -6px rgba(37,99,235,.6); }
+  .bot { align-self:flex-start; background:var(--painel); border:1px solid var(--borda);
+         border-bottom-left-radius:5px; }
+  .typing { color:var(--tinta-fraca); font-style:italic; }
+
+  #sugestoes { display:flex; flex-wrap:wrap; gap:9px; align-self:flex-start; max-width:88%; margin-top:2px; }
+  #sugestoes button { background:var(--painel-alto); border:1px solid var(--borda);
+    color:var(--tinta-fraca); padding:9px 15px; border-radius:99px; font-size:13.5px;
+    font-weight:400; cursor:pointer; text-align:left; transition:border-color .15s, color .15s; }
+  #sugestoes button:hover { border-color:var(--azul-vivo); color:var(--tinta); }
+  #sugestoes button:focus-visible { outline:2px solid var(--azul-vivo); outline-offset:2px; }
+
+  /* -------------------------------------------------------------- composer */
+  form { display:flex; gap:10px; padding:14px 20px 16px; background:var(--breu);
+         max-width:820px; width:100%; margin:0 auto; }
+  input { flex:1; padding:13px 16px; border-radius:12px; border:1px solid var(--borda-forte);
+          background:var(--painel); color:var(--tinta); font-size:15px; transition:border-color .15s, box-shadow .15s; }
+  input::placeholder { color:var(--tinta-tenue); }
+  input:focus { outline:none; border-color:var(--azul-vivo); box-shadow:0 0 0 3px rgba(37,99,235,.18); }
+  button { padding:0 20px; border-radius:12px; border:none; background:var(--azul); color:#fff;
+           font-weight:600; font-size:15px; cursor:pointer; transition:background .15s; }
+  button:hover:not(:disabled) { background:var(--azul-vivo); }
+  button:disabled { opacity:.45; cursor:default; }
+  button:focus-visible { outline:2px solid var(--azul-vivo); outline-offset:2px; }
+  .anexo { background:var(--painel); border:1px solid var(--borda-forte); color:var(--tinta-fraca);
+           padding:0 15px; font-size:17px; }
+  .anexo:hover { border-color:var(--azul-vivo); color:var(--tinta); background:var(--painel); }
+
+  /* ----------------------------------------------------------------- login */
+  #login { position:fixed; inset:0; background:var(--breu); display:flex; align-items:center;
+           justify-content:center; z-index:10; padding:24px;
+           background-image:radial-gradient(ellipse 60% 45% at 50% 0%, #10224a 0%, transparent 70%); }
+  #login .caixa { background:var(--painel); padding:36px; border-radius:18px; width:min(400px,100%);
+                  border:1px solid var(--borda); box-shadow:0 24px 70px -30px rgba(0,0,0,.9); }
+  #login .marca { display:flex; align-items:center; gap:11px; margin-bottom:22px; }
+  #login .marca svg { width:38px; height:auto; display:block; }
+  #login .marca span { font-size:21px; font-weight:700; letter-spacing:-.02em; }
+  #login h2 { margin:0 0 6px; font-size:19px; font-weight:650; letter-spacing:-.01em; }
+  #login p { margin:0 0 22px; color:var(--tinta-fraca); font-size:14.5px; line-height:1.55; }
+  #login form { padding:0; background:none; border:none; flex-direction:column; gap:12px; max-width:none; }
   #login input { width:100%; }
-  #login button { padding:12px; }
-  #erro { color:var(--erro); font-size:13px; min-height:18px; margin-top:10px; }
+  #login button { padding:13px; }
+  #erro { color:var(--erro); font-size:13.5px; min-height:19px; margin-top:12px; }
   .oculto { display:none !important; }
-  /* Rodape institucional. Discreto de proposito: o chat e uma ferramenta de
-     trabalho, nao um documento — os links precisam existir (o cliente aceita
-     termos ao usar o servico) sem competir com a conversa. */
+
+  /* Rodape institucional. Discreto de proposito: o chat e ferramenta de
+     trabalho, nao documento — os links precisam existir sem competir com a
+     conversa. */
   .legais { display:flex; flex-wrap:wrap; justify-content:center; gap:6px 18px;
             padding:0 16px 14px; max-width:820px; width:100%; margin:0 auto; }
-  .legais a { color:#6b7a91; font-size:12.5px; text-decoration:none; }
-  .legais a:hover { color:var(--muted); text-decoration:underline; }
-  .legais a:focus-visible { outline:2px solid var(--accent); outline-offset:2px; border-radius:3px; }
-  #login .legais { padding:20px 0 0; margin-top:18px; border-top:1px solid #1f2937; }
+  .legais a { color:var(--tinta-tenue); font-size:12.5px; text-decoration:none; }
+  .legais a:hover { color:var(--tinta-fraca); text-decoration:underline; }
+  .legais a:focus-visible { outline:2px solid var(--azul-vivo); outline-offset:2px; border-radius:3px; }
+  #login .legais { padding:22px 0 0; margin-top:20px; border-top:1px solid var(--borda); }
+
+  @media (prefers-reduced-motion:reduce) { .msg { animation:none; } * { transition:none !important; } }
 </style></head>
 <body>
   <div id="login">
     <div class="caixa">
-      <h2>Katalli</h2>
-      <p>Entre com o e-mail e a senha da sua empresa.</p>
+      <div class="marca">__LOGO_LOGIN__<span>Katalli</span></div>
+      <h2>Entrar</h2>
+      <p>Use o e-mail e a senha da sua empresa.</p>
       <form id="formLogin">
         <input id="email" type="email" placeholder="E-mail" autocomplete="username" />
         <input id="senha" type="password" placeholder="Senha" autocomplete="current-password" />
@@ -405,7 +492,7 @@ export class ChatController {
   </div>
 
   <header class="oculto" id="cabecalho">
-    <a class="logo" href="/chat" title="Ir para a tela principal" aria-label="Katalli — tela principal">K</a>
+    <a class="logo" href="/chat" title="Ir para a tela principal" aria-label="Katalli — tela principal">__LOGO_TOPO__</a>
     <div><h1>Katalli <small id="quem">· assistente</small></h1></div>
     <div class="acoes">
       <!--BOTAO_SUPORTE-->

@@ -125,8 +125,32 @@ export class ConnectionsController {
   @Get()
   page(@Res() res: Response): void {
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(ConnectionsController.HTML);
+    res.send(
+      ConnectionsController.HTML.replace(
+        '__LOGO__',
+        ConnectionsController.LOGO,
+      ),
+    );
   }
+
+  /**
+   * Simbolo da marca — mesmo SVG da landing e do chat, embutido para a pagina
+   * nao depender de arquivo externo. O id do gradiente e proprio desta tela:
+   * dois `linearGradient` com o mesmo id no documento tornariam o SVG
+   * ambiguo para o navegador.
+   */
+  private static readonly LOGO = `<svg viewBox="0 0 210 128" role="img" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="katalliGradIntegra" x1="0" y1="0.5" x2="1" y2="0.35">
+      <stop offset="0%" stop-color="#1d4ed8"/><stop offset="38%" stop-color="#0ea5e9"/>
+      <stop offset="62%" stop-color="#10b981"/><stop offset="100%" stop-color="#84cc16"/>
+    </linearGradient>
+  </defs>
+  <g fill="none" stroke="url(#katalliGradIntegra)" stroke-width="21" stroke-linecap="square">
+    <path d="M105,64 C105,36 84,20 62,20 C36,20 16,39 16,64 C16,89 36,108 62,108 C84,108 105,92 105,64 C105,36 126,20 148,20 C174,20 194,39 194,64 C194,89 174,108 148,108"/>
+    <path d="M119,52 L186,124"/>
+  </g>
+</svg>`;
 
   private static readonly HTML = `<!doctype html>
 <html lang="pt-br"><head>
@@ -134,45 +158,99 @@ export class ConnectionsController {
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Katalli — Integracoes</title>
 <style>
-  :root { --bg:#0f172a; --panel:#111827; --accent:#7c3aed; --text:#e5e7eb; --muted:#9ca3af; --erro:#f87171; --ok:#34d399; --linha:#1f2937; }
+  /* Mesma paleta da landing e do chat. */
+  :root {
+    --breu:#080b14; --painel:#0f1729; --painel-alto:#151f36;
+    --borda:#1e2a44; --borda-forte:#2c3b5c;
+    --tinta:#e8edf7; --tinta-fraca:#94a3b8; --tinta-tenue:#73839b;
+    --azul:#2563eb; --azul-vivo:#3b82f6;
+    --ok:#22c55e; --erro:#f87171;
+    /* Alias mantidos: o JS e o CSS antigo referenciam estes nomes. */
+    --accent:#2563eb; --muted:#94a3b8; --text:#e8edf7; --linha:#1e2a44;
+  }
   * { box-sizing:border-box; }
-  body { margin:0; font-family:-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
-  header { padding:16px 20px; background:var(--panel); border-bottom:1px solid var(--linha); display:flex; align-items:center; gap:10px; }
-  /* Link para a tela principal: e o que se tenta clicar para voltar. Como
-     <a>, responde a teclado e a abrir em nova aba. */
-  header .logo { width:32px; height:32px; border-radius:8px; background:var(--accent); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; text-decoration:none; flex:none; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+         background:var(--breu); color:var(--tinta); min-height:100vh;
+         -webkit-font-smoothing:antialiased; }
+  ::selection { background:var(--azul); color:#fff; }
+
+  header { padding:12px 20px; background:rgba(8,11,20,.88); backdrop-filter:blur(12px);
+           border-bottom:1px solid var(--borda); display:flex; align-items:center; gap:12px;
+           position:sticky; top:0; z-index:5; }
+  /* Sem largura fixa: o simbolo e largo e um container quadrado o espremeria. */
+  header .logo { display:flex; align-items:center; flex:none; text-decoration:none;
+                 border-radius:8px; padding:2px; }
+  header .logo svg { width:38px; height:auto; display:block; }
   header .logo:hover { filter:brightness(1.15); }
-  header .logo:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
-  header h1 { font-size:18px; margin:0; }
-  header a { margin-left:auto; color:var(--muted); text-decoration:none; font-size:14px; border:1px solid #374151; padding:6px 12px; border-radius:8px; }
-  main { max-width:760px; margin:0 auto; padding:24px 20px 60px; }
-  .aviso { background:#0b1220; border:1px solid var(--linha); border-radius:12px; padding:14px 16px; font-size:13px; color:var(--muted); line-height:1.5; margin-bottom:24px; }
-  .grupo { margin-bottom:28px; }
-  .grupo h2 { font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 10px; font-weight:600; }
-  .card { background:var(--panel); border:1px solid var(--linha); border-radius:12px; padding:16px; margin-bottom:10px; }
-  .topo { display:flex; align-items:center; gap:12px; }
-  .topo .nome { font-weight:600; font-size:15px; }
-  .selo { font-size:12px; padding:3px 9px; border-radius:20px; border:1px solid var(--linha); color:var(--muted); }
-  .selo.on { color:var(--ok); border-color:#065f46; background:#022c22; }
+  header .logo:focus-visible { outline:2px solid var(--azul-vivo); outline-offset:3px; }
+  header h1 { font-size:17px; margin:0; font-weight:650; letter-spacing:-.01em; }
+  header a:not(.logo) { margin-left:auto; color:var(--tinta-fraca); text-decoration:none;
+    font-size:13.5px; border:1px solid var(--borda-forte); padding:7px 13px; border-radius:9px;
+    transition:border-color .15s, color .15s; }
+  header a:not(.logo):hover { border-color:var(--tinta-fraca); color:var(--tinta); }
+  header a:focus-visible { outline:2px solid var(--azul-vivo); outline-offset:2px; }
+
+  main { max-width:780px; margin:0 auto; padding:32px 20px 72px; }
+  .aviso { background:var(--painel); border:1px solid var(--borda); border-left:3px solid var(--azul);
+           border-radius:0 12px 12px 0; padding:15px 18px; font-size:13.5px; color:var(--tinta-fraca);
+           line-height:1.6; margin-bottom:30px; }
+  .grupo { margin-bottom:34px; }
+  .grupo h2 { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px;
+              text-transform:uppercase; letter-spacing:.12em; color:var(--azul-vivo);
+              margin:0 0 12px; font-weight:600; }
+
+  .card { background:var(--painel); border:1px solid var(--borda); border-radius:14px;
+          padding:18px; margin-bottom:11px; transition:border-color .15s; }
+  .card:hover { border-color:var(--borda-forte); }
+  .topo { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .topo .nome { font-weight:650; font-size:15.5px; letter-spacing:-.01em; }
+  /* O estado tambem aparece na cor E no texto: quem nao distingue verde de
+     cinza precisa conseguir ler que esta conectado. */
+  .selo { font-size:12px; padding:4px 10px; border-radius:99px; border:1px solid var(--borda-forte);
+          color:var(--tinta-fraca); white-space:nowrap; }
+  .selo.on { color:var(--ok); border-color:#166534; background:rgba(34,197,94,.12); }
   .acoes { margin-left:auto; display:flex; gap:8px; }
-  button { padding:8px 14px; border-radius:8px; border:none; background:var(--accent); color:#fff; font-weight:600; font-size:13px; cursor:pointer; }
-  button.secundario { background:none; border:1px solid #374151; color:var(--muted); }
-  button:disabled { opacity:.5; cursor:default; }
-  .ajuda { color:var(--muted); font-size:13px; line-height:1.5; margin:10px 0 0; }
-  .form { margin-top:12px; display:none; gap:8px; }
+
+  button { padding:9px 16px; border-radius:9px; border:none; background:var(--azul); color:#fff;
+           font-weight:600; font-size:13.5px; cursor:pointer; transition:background .15s; }
+  button:hover:not(:disabled) { background:var(--azul-vivo); }
+  button.secundario { background:none; border:1px solid var(--borda-forte); color:var(--tinta-fraca); }
+  button.secundario:hover:not(:disabled) { background:none; border-color:var(--tinta-fraca); color:var(--tinta); }
+  button:disabled { opacity:.45; cursor:default; }
+  button:focus-visible { outline:2px solid var(--azul-vivo); outline-offset:2px; }
+
+  .ajuda { color:var(--tinta-fraca); font-size:13.5px; line-height:1.6; margin:12px 0 0; }
+  .form { margin-top:14px; display:none; gap:9px; }
   .form.aberto { display:flex; }
-  .form input { flex:1; padding:10px 12px; border-radius:8px; border:1px solid #374151; background:#0b1220; color:var(--text); font-size:14px; }
-  .form input:focus { outline:none; border-color:var(--accent); }
-  .msg { font-size:13px; margin-top:10px; min-height:16px; }
+  .form input { flex:1; padding:11px 14px; border-radius:10px; border:1px solid var(--borda-forte);
+                background:var(--painel-alto); color:var(--tinta); font-size:14px;
+                transition:border-color .15s, box-shadow .15s; }
+  /* Mais claro que o --tinta-tenue usado no chat: aqui o campo fica sobre o
+     painel-alto, e o tom do chat cairia para 4.25:1, abaixo do minimo. Este
+     da 4.73:1 sem competir com o texto ja digitado. */
+  .form input::placeholder { color:#7b8ba3; }
+  .form input:focus { outline:none; border-color:var(--azul-vivo); box-shadow:0 0 0 3px rgba(37,99,235,.18); }
+
+  .msg { font-size:13.5px; margin-top:11px; min-height:17px; }
   .msg.erro { color:var(--erro); }
   .msg.ok { color:var(--ok); }
-  #carregando, #semSessao { text-align:center; color:var(--muted); padding:60px 20px; }
-  #semSessao a { color:var(--accent); }
+  #carregando, #semSessao { text-align:center; color:var(--tinta-fraca); padding:70px 20px; }
+  #semSessao a { color:var(--azul-vivo); }
   .oculto { display:none !important; }
+
+  /* Rodape institucional, igual ao do chat. */
+  .legais { display:flex; flex-wrap:wrap; justify-content:center; gap:6px 18px;
+            padding:8px 16px 0; max-width:780px; margin:0 auto; }
+  .legais a { color:var(--tinta-tenue); font-size:12.5px; text-decoration:none; }
+  .legais a:hover { color:var(--tinta-fraca); text-decoration:underline; }
+  .legais a:focus-visible { outline:2px solid var(--azul-vivo); outline-offset:2px; border-radius:3px; }
+
+  @media (prefers-reduced-motion:reduce) { * { transition:none !important; } }
+  @media (max-width:560px) { .acoes { margin-left:0; width:100%; } main { padding-top:24px; } }
 </style></head>
 <body>
   <header>
-    <a class="logo" href="/chat" title="Ir para a tela principal" aria-label="Katalli — tela principal">K</a>
+    <a class="logo" href="/chat" title="Ir para a tela principal" aria-label="Katalli — tela principal">__LOGO__</a>
     <h1>Integracoes</h1>
     <a href="/chat">Voltar ao chat</a>
   </header>
@@ -193,6 +271,13 @@ export class ConnectionsController {
       <div id="grupos"></div>
     </div>
   </main>
+
+  <nav class="legais" aria-label="Documentos institucionais">
+    <a href="/privacidade">Privacidade</a>
+    <a href="/termos">Termos</a>
+    <a href="/seguranca">Segurança</a>
+    <a href="/acessibilidade">Acessibilidade</a>
+  </nav>
 
 <script>
   const token = localStorage.getItem('katalli_token');
