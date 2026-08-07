@@ -8,6 +8,7 @@ import { ReportTools } from './report.tools';
 import { NotificacaoService } from './notificacao.service';
 import { AlertService } from './alert.service';
 import { AlertTools } from './alert.tools';
+import { MonitorCustoService } from './monitor-custo.service';
 
 /**
  * Avisos proativos: o Katalli falando sem ser perguntado.
@@ -19,6 +20,10 @@ import { AlertTools } from './alert.tools';
  *
  * Ambos entregam pelo NotificacaoService, que usa a conta Google que a
  * organizacao ja autorizou.
+ *
+ * O MonitorCustoService e de outra natureza: avisa VOCE, nao o cliente,
+ * quando o gasto com IA do dia passa do teto. Mora aqui por reaproveitar o
+ * mesmo canal de e-mail.
  */
 @Module({
   imports: [AiModule, WhatsappModule, GoogleModule],
@@ -29,6 +34,7 @@ import { AlertTools } from './alert.tools';
     ReportTools,
     AlertService,
     AlertTools,
+    MonitorCustoService,
   ],
   exports: [DailyReportService, ReportScheduleService, AlertService],
 })

@@ -3,6 +3,7 @@ import { AiService } from './ai.service';
 import { ConversationMemoryService } from './conversation-memory.service';
 import { ModelRouterService } from './model-router.service';
 import { AiUsageService } from './ai-usage.service';
+import { CustoIaService } from './custo-ia.service';
 
 /**
  * Modulo de IA do Katalli. Exporta o AiService e o ConversationMemoryService
@@ -18,10 +19,11 @@ import { AiUsageService } from './ai-usage.service';
     ConversationMemoryService,
     ModelRouterService,
     AiUsageService,
+    CustoIaService,
   ],
   // AiUsageService e exportado porque o chat precisa consultar a cota antes de
   // chamar a IA. ModelRouterService segue interno: quem chama escolhe a ROTA,
   // nunca o modelo.
-  exports: [AiService, ConversationMemoryService, AiUsageService],
+  exports: [AiService, ConversationMemoryService, AiUsageService, CustoIaService],
 })
 export class AiModule {}
