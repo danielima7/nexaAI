@@ -39,13 +39,29 @@ model Organization {
   /// merecem tratamento comercial diferente.
   autocadastro Boolean @default(false)
 
-  /// Teto de mensagens que esta organizacao pode enviar no chat.
+  /// Teto TOTAL de mensagens que esta organizacao pode enviar no chat.
   ///
-  /// `null` = sem teto (todo cliente que voce cadastra por convite). Contas de
-  /// autocadastro nascem com o limite de KATALLI_AUTOCADASTRO_LIMITE, porque a
-  /// rota e publica: sem teto, quem descobrisse a URL gastaria a chave da
-  /// Anthropic ate o credito acabar, e a conta so apareceria na fatura.
+  /// Mecanismo de TRIAL, nao de plano: nao reseta. `null` = sem teto (todo
+  /// cliente que voce cadastra por convite). Contas de autocadastro nascem com
+  /// o limite de KATALLI_AUTOCADASTRO_LIMITE, porque a rota e publica.
+  ///
+  /// Diferente de `plano`/`limiteTokensDia`, que e a cota recorrente do
+  /// cliente pagante — as duas convivem: o trial acaba de vez, a cota renova.
   limiteInteracoes Int?
+
+  /// Plano comercial contratado. Define a cota diaria de tokens.
+  ///
+  /// O limite de cada plano mora em CODIGO (src/ai/planos.ts), nao aqui: mudar
+  /// a cota de um plano deve valer para todos os clientes dele de uma vez, e
+  /// numa coluna isso exigiria varrer o banco a cada reajuste. Aqui fica so a
+  /// qual plano a empresa pertence.
+  plano String @default("padrao")
+
+  /// Cota diaria de tokens especifica desta organizacao.
+  ///
+  /// `null` = usa a cota do plano. Existe para o caso concreto de negociar
+  /// condicao diferente com um cliente sem precisar inventar um plano novo.
+  limiteTokensDia Int?
 
   users User[]
 }

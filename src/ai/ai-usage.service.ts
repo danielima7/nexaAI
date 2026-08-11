@@ -42,6 +42,67 @@ export class AiUsageService {
     });
   }
 
+  /**
+   * Instante da meia-noite de hoje no fuso de Sao Paulo.
+   *
+   * O fuso e explicito porque o servidor de producao roda em UTC: usar a
+   * meia-noite local do processo faria a cota do cliente virar as 21h — ele
+   * perderia tres horas de uso todo dia, sem entender por que.
+   */
+  static inicioDoDiaBrasil(): Date {
+    const agora = new Date();
+    // Formata a data no fuso alvo e reconstroi o instante correspondente.
+    const partes = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Sao_Paulo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).formatToParts(agora);
+
+    const p = (t: string) => Number(partes.find((x) => x.type === t)?.value);
+    // Quanto ja se passou do dia em Sao Paulo, subtraido do instante atual.
+    const decorridoMs =
+      (p('hour') * 3600 + p('minute') * 60 + p('second')) * 1000;
+    return new Date(agora.getTime() - decorridoMs);
+  }
+
+  /**
+   * Tokens que a organizacao consumiu hoje, somando entrada, saida e cache.
+   *
+   * Soma TUDO de proposito: e o volume que a Anthropic mede e o unico numero
+   * explicavel ao cliente sem entrar em precificacao de cache. Para custo
+   * real, com os pesos de cada tipo, use o CustoIaService.
+   *
+   * Conta todas as rodadas, nao so a primeira: o loop de tool use consome de
+   * verdade, e uma pergunta que aciona cinco ferramentas gasta mesmo mais cota
+   * do que uma que nao aciona nenhuma.
+   */
+  async tokensDoDia(organizationId: string): Promise<number> {
+    const soma = await this.prisma.aiUsage.aggregate({
+      where: {
+        organizationId,
+        createdAt: { gte: AiUsageService.inicioDoDiaBrasil() },
+      },
+      _sum: {
+        inputTokens: true,
+        outputTokens: true,
+        cacheReadTokens: true,
+        cacheWriteTokens: true,
+      },
+    });
+
+    return (
+      (soma._sum.inputTokens ?? 0) +
+      (soma._sum.outputTokens ?? 0) +
+      (soma._sum.cacheReadTokens ?? 0) +
+      (soma._sum.cacheWriteTokens ?? 0)
+    );
+  }
+
   async registrar(escopo: EscopoUso, usage: Anthropic.Usage): Promise<void> {
     try {
       await this.prisma.aiUsage.create({

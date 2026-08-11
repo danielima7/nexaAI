@@ -4,6 +4,7 @@ import { ConversationMemoryService } from './conversation-memory.service';
 import { ModelRouterService } from './model-router.service';
 import { AiUsageService } from './ai-usage.service';
 import { CustoIaService } from './custo-ia.service';
+import { LimiteUsoService } from './limite-uso.service';
 
 /**
  * Modulo de IA do Katalli. Exporta o AiService e o ConversationMemoryService
@@ -20,10 +21,17 @@ import { CustoIaService } from './custo-ia.service';
     ModelRouterService,
     AiUsageService,
     CustoIaService,
+    LimiteUsoService,
   ],
-  // AiUsageService e exportado porque o chat precisa consultar a cota antes de
-  // chamar a IA. ModelRouterService segue interno: quem chama escolhe a ROTA,
-  // nunca o modelo.
-  exports: [AiService, ConversationMemoryService, AiUsageService, CustoIaService],
+  // LimiteUsoService e exportado porque o chat precisa perguntar "pode?" antes
+  // de chamar a IA. AiUsageService sai junto por causa dos scripts de custo.
+  // ModelRouterService segue interno: quem chama escolhe a ROTA, nunca o modelo.
+  exports: [
+    AiService,
+    ConversationMemoryService,
+    AiUsageService,
+    CustoIaService,
+    LimiteUsoService,
+  ],
 })
 export class AiModule {}

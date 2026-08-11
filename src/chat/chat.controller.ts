@@ -25,7 +25,7 @@ import {
 } from '../connections/provider-catalog';
 import { UploadService } from '../uploads/upload.service';
 import { SuporteService } from '../suporte/suporte.service';
-import { AiUsageService } from '../ai/ai-usage.service';
+import { LimiteUsoService } from '../ai/limite-uso.service';
 
 /**
  * Chat Web do Katalli: uma pagina simples servida pelo backend + um endpoint
@@ -50,7 +50,7 @@ export class ChatController {
     private readonly connections: ConnectionsService,
     private readonly uploads: UploadService,
     private readonly suporte: SuporteService,
-    private readonly usoIa: AiUsageService,
+    private readonly limites: LimiteUsoService,
   ) {}
 
   /** Identificador da origem para o limite de tentativas de login. */
@@ -179,24 +179,16 @@ export class ChatController {
       );
     }
 
-    // Teto de mensagens (contas de autocadastro). Conferido ANTES de chamar a
-    // IA — verificar depois nao impediria o gasto, so registraria que ocorreu.
-    // Organizacao sem `limiteInteracoes` (todo cliente que voce cadastra por
-    // convite) passa direto.
-    const limite = dados.organizacao.limiteInteracoes;
-    if (limite !== null && limite !== undefined) {
-      const usadas = await this.usoIa.contarInteracoes(sessao.organizationId);
-      if (usadas >= limite) {
-        // 200 com texto, e nao erro HTTP: para quem esta conversando, um erro
-        // tecnico parece defeito. A conta e os dados continuam intactos.
-        return {
-          reply:
-            `Voce usou as ${limite} mensagens da conta gratuita.\n\n` +
-            'Seus dados e integracoes continuam salvos. Para liberar o uso ' +
-            'completo, fale com a gente pelo WhatsApp no rodape do site — ' +
-            'respondemos no mesmo dia.',
-        };
-      }
+    // Limites de uso (teto do trial e cota diaria do plano). Conferidos ANTES
+    // de chamar a IA — verificar depois nao impediria o gasto, so registraria
+    // que ocorreu. As duas regras moram no LimiteUsoService: o controller so
+    // pergunta "pode?", entao um limite novo nao depende de alguem lembrar de
+    // adicionar mais um `if` aqui.
+    const veredito = await this.limites.verificar(dados.organizacao);
+    if (!veredito.permitido) {
+      // 200 com texto, e nao erro HTTP: para quem esta conversando, um erro
+      // tecnico parece defeito. A conta e os dados continuam intactos.
+      return { reply: veredito.motivo! };
     }
 
     const contact = `web:${this.sessionIdSeguro(body?.sessionId)}`;
