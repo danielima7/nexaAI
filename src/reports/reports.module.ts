@@ -9,6 +9,7 @@ import { NotificacaoService } from './notificacao.service';
 import { AlertService } from './alert.service';
 import { AlertTools } from './alert.tools';
 import { MonitorCustoService } from './monitor-custo.service';
+import { MonitorCreditoService } from './monitor-credito.service';
 
 /**
  * Avisos proativos: o Katalli falando sem ser perguntado.
@@ -21,9 +22,11 @@ import { MonitorCustoService } from './monitor-custo.service';
  * Ambos entregam pelo NotificacaoService, que usa a conta Google que a
  * organizacao ja autorizou.
  *
- * O MonitorCustoService e de outra natureza: avisa VOCE, nao o cliente,
- * quando o gasto com IA do dia passa do teto. Mora aqui por reaproveitar o
- * mesmo canal de e-mail.
+ * Os dois monitores sao de outra natureza: avisam VOCE, nao o cliente, e moram
+ * aqui por reaproveitarem o mesmo canal de e-mail.
+ *  - MonitorCustoService: gasto do dia passou do teto (dinheiro saindo rapido).
+ *  - MonitorCreditoService: a IA parou de atender todo mundo (produto fora do
+ *    ar). Um nao cobre o outro: saldo que acaba devagar nunca encosta no teto.
  */
 @Module({
   imports: [AiModule, WhatsappModule, GoogleModule],
@@ -35,6 +38,7 @@ import { MonitorCustoService } from './monitor-custo.service';
     AlertService,
     AlertTools,
     MonitorCustoService,
+    MonitorCreditoService,
   ],
   exports: [DailyReportService, ReportScheduleService, AlertService],
 })

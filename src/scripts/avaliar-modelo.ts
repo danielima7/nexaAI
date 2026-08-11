@@ -9,19 +9,26 @@
  * em um numero antes da troca.
  *
  * O que NAO faz: executar ferramenta. So observa qual a IA escolheu. Nenhuma
- * API de cliente e tocada, nada e gravado no banco.
+ * API de cliente e tocada.
+ *
+ * O consumo de tokens E gravado em AiUsage (rota `eval`, sem organizacao).
+ * Rodar isto custa dinheiro de verdade — uma passada sao dezenas de chamadas
+ * com o prefixo de ~58 ferramentas — e gasto invisivel drena a conta sem
+ * aparecer em `npm run custo` nem no monitor de custo.
  *
  *   npm run modelo:avaliar
  *   npm run modelo:avaliar -- claude-opus-4-8 claude-sonnet-5 claude-haiku-4-5
  */
 import 'dotenv/config';
 import Anthropic from '@anthropic-ai/sdk';
+import { PrismaClient } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { ToolRegistryService } from '../tools/tool-registry.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
 import { ModelRouterService } from '../ai/model-router.service';
 import { AiUsageService } from '../ai/ai-usage.service';
+import { SaudeIaService } from '../ai/saude-ia.service';
 
 import { SystemTools } from '../tools/system-tools';
 import { AsaasTools } from '../integrations/asaas/asaas.tools';
@@ -255,6 +262,7 @@ function systemPromptReal(): string {
     stub as unknown as ToolRegistryService,
     stub as unknown as ModelRouterService,
     stub as unknown as AiUsageService,
+    stub as unknown as SaudeIaService,
   );
   return (ai as unknown as { systemPrompt: string })['systemPrompt'];
 }
@@ -272,6 +280,7 @@ async function avaliar(
   modelo: string,
   tools: Anthropic.Tool[],
   system: string,
+  usage: AiUsageService,
 ): Promise<Resultado> {
   // Reusa o roteador de producao: valida a homologacao do modelo e devolve os
   // mesmos parametros que a rota `chat` usaria de verdade.
@@ -303,6 +312,15 @@ async function avaliar(
     });
 
     const u = resposta.usage;
+
+    // Registrado caso a caso, e nao no fim: uma eval interrompida no meio
+    // gastou o que gastou, e esse gasto precisa aparecer no relatorio.
+    // `rodada: 0` porque cada caso e uma chamada unica, sem loop de tool use.
+    await usage.registrar(
+      { rota: 'eval', modelo: perfil.model, rodada: 0 },
+      u,
+    );
+
     resultado.tokensEntrada +=
       (u.input_tokens ?? 0) +
       (u.cache_read_input_tokens ?? 0) +
@@ -358,9 +376,19 @@ async function main(): Promise<void> {
   const client = new Anthropic({ apiKey });
   const resultados: Resultado[] = [];
 
-  for (const modelo of modelos) {
-    process.stdout.write(`${modelo.padEnd(20)} `);
-    resultados.push(await avaliar(client, modelo, tools, system));
+  // Prisma DE VERDADE aqui — o `stub` acima serve para montar as ferramentas
+  // sem tocar em API nenhuma, mas o consumo precisa chegar ao banco.
+  const prisma = new PrismaClient();
+  const usage = new AiUsageService(prisma as unknown as PrismaService);
+
+  try {
+    for (const modelo of modelos) {
+      process.stdout.write(`${modelo.padEnd(20)} `);
+      resultados.push(await avaliar(client, modelo, tools, system, usage));
+    }
+  } finally {
+    // Sem isto o processo fica pendurado na conexao ate o timeout.
+    await prisma.$disconnect();
   }
 
   console.log('\n=== ACERTO NA ESCOLHA DE FERRAMENTA ===\n');
@@ -386,7 +414,9 @@ async function main(): Promise<void> {
   console.log(
     '\nLeia as divergencias antes de olhar a porcentagem: uma escolha ' +
       'defensavel que eu nao previ deve virar caso novo, nao motivo para ' +
-      'rejeitar o modelo.\n',
+      'rejeitar o modelo.\n' +
+      '\nO consumo desta rodada foi gravado como rota "eval". Veja o custo ' +
+      'em reais com: npm run custo\n',
   );
 }
 

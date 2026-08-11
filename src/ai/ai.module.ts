@@ -5,6 +5,7 @@ import { ModelRouterService } from './model-router.service';
 import { AiUsageService } from './ai-usage.service';
 import { CustoIaService } from './custo-ia.service';
 import { LimiteUsoService } from './limite-uso.service';
+import { SaudeIaService } from './saude-ia.service';
 
 /**
  * Modulo de IA do Katalli. Exporta o AiService e o ConversationMemoryService
@@ -22,6 +23,7 @@ import { LimiteUsoService } from './limite-uso.service';
     AiUsageService,
     CustoIaService,
     LimiteUsoService,
+    SaudeIaService,
   ],
   // LimiteUsoService e exportado porque o chat precisa perguntar "pode?" antes
   // de chamar a IA. AiUsageService sai junto por causa dos scripts de custo.
@@ -32,6 +34,10 @@ import { LimiteUsoService } from './limite-uso.service';
     AiUsageService,
     CustoIaService,
     LimiteUsoService,
+    // Exportado para o ReportsModule se inscrever no aviso de queda. A direcao
+    // e essa de proposito: quem chama a API detecta, quem tem canal de e-mail
+    // avisa — o contrario criaria ciclo entre os modulos.
+    SaudeIaService,
   ],
 })
 export class AiModule {}

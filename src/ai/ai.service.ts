@@ -6,6 +6,7 @@ import { ToolRegistryService } from '../tools/tool-registry.service';
 import { ToolContext } from '../tools/tool.interface';
 import { ModelRouterService, RotaIa } from './model-router.service';
 import { AiUsageService } from './ai-usage.service';
+import { SaudeIaService } from './saude-ia.service';
 
 /**
  * Service de IA do Katalli (Claude / Anthropic).
@@ -74,6 +75,7 @@ export class AiService {
     private readonly tools: ToolRegistryService,
     private readonly router: ModelRouterService,
     private readonly usage: AiUsageService,
+    private readonly saude: SaudeIaService,
   ) {
     const apiKey = this.config.get<string>('ANTHROPIC_API_KEY');
     this.client = new Anthropic({ apiKey });
@@ -154,6 +156,11 @@ export class AiService {
             : {}),
         });
 
+        // A API respondeu: se havia uma queda global em curso, ela acabou.
+        // Marcado aqui dentro do loop, e nao so no fim do turno, porque a
+        // prova de que o servico voltou e a resposta — nao o turno completo.
+        this.saude.registrarSucesso();
+
         // Log de cache (verificar economia): read = tokens servidos do cache.
         const u = response.usage;
         this.logger.debug(
@@ -218,7 +225,13 @@ export class AiService {
     } catch (error: any) {
       const details = error?.message ?? error;
       this.logger.error(`Falha ao chamar a IA: ${JSON.stringify(details)}`);
-      // Em caso de erro, devolvemos uma mensagem amigavel (nao vazamos o erro).
+
+      // Saldo zerado ou chave invalida derruba TODOS os clientes de uma vez.
+      // Sem este aviso, a unica forma de descobrir e alguem reclamar.
+      this.saude.registrarFalha(error);
+
+      // A resposta ao cliente continua generica de proposito, inclusive nesse
+      // caso: o estado da nossa conta com a Anthropic nao e assunto dele.
       return 'Tive um problema para processar sua mensagem agora. Pode tentar de novo em instantes?';
     }
   }

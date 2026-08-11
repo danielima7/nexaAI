@@ -3,9 +3,21 @@ import Anthropic from '@anthropic-ai/sdk';
 import { PrismaService } from '../prisma/prisma.service';
 import { RotaIa } from './model-router.service';
 
+/**
+ * De onde veio a chamada.
+ *
+ * E maior que `RotaIa` porque nem todo gasto passa pelo roteador: a avaliacao
+ * de modelos escolhe o modelo na mao e mede varios em sequencia. Ainda assim
+ * gasta dinheiro de verdade, e gasto que nao e registrado nao aparece em
+ * `npm run custo` nem no monitor — foi assim que a conta secou sem aviso.
+ *
+ * `RotaIa` fica intacta: ela e a chave de ROTEAMENTO, e `eval` nao roteia nada.
+ */
+export type OrigemUso = RotaIa | 'eval';
+
 /** Identificacao da chamada, para atribuir o consumo a quem o gerou. */
 export interface EscopoUso {
-  rota: RotaIa;
+  rota: OrigemUso;
   modelo: string;
   rodada: number;
   organizationId?: string;
