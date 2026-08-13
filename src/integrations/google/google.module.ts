@@ -14,8 +14,10 @@ import { SheetsTools } from './sheets.tools';
 @Module({
   controllers: [GoogleController],
   providers: [GoogleService, GoogleTools, SheetsService, SheetsTools],
-  // Exportado para o resumo diario enviar o e-mail pela conta Google da
+  // GoogleService: o resumo diario envia o e-mail pela conta Google da
   // organizacao — mesma autorizacao que ela ja deu para as planilhas.
-  exports: [GoogleService],
+  // SheetsService: o painel le a planilha direto, sem passar pela IA, para
+  // montar os graficos.
+  exports: [GoogleService, SheetsService],
 })
 export class GoogleModule {}

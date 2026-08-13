@@ -30,6 +30,18 @@ export class SheetsService {
   /** Teto de linhas devolvidas numa leitura (protege custo de token da IA). */
   static readonly MAX_LINHAS = 200;
 
+  /**
+   * Teto da leitura para ANALISE (painel/graficos).
+   *
+   * Muito maior que MAX_LINHAS porque o motivo daquele teto nao vale aqui: os
+   * 200 protegem o custo de token quando a planilha vai dentro do prompt. O
+   * painel agrega em codigo, sem passar pela IA, entao o unico limite real e
+   * memoria e tempo de resposta — e somar 5 mil linhas e instantaneo.
+   *
+   * Ainda existe um teto para uma planilha gigante nao derrubar o processo.
+   */
+  static readonly MAX_LINHAS_ANALISE = 5000;
+
   constructor(private readonly google: GoogleService) {}
 
   private sheets(refreshToken: string) {
@@ -125,6 +137,31 @@ export class SheetsService {
     return {
       valores: todas.slice(0, teto),
       truncado: todas.length > teto,
+      total: todas.length,
+    };
+  }
+
+  /**
+   * Le uma aba inteira para analise (painel/graficos), sem o teto da IA.
+   *
+   * Separado de `lerIntervalo` de proposito: sao dois casos com restricoes
+   * opostas. Aquele alimenta um prompt e paga por token; este alimenta um
+   * `reduce` e paga nada. Um parametro `limite` compartilhado esconderia essa
+   * diferenca e um dia alguem passaria 5000 no caminho da IA.
+   */
+  async lerParaAnalise(
+    refreshToken: string,
+    planilhaId: string,
+    intervalo: string,
+  ): Promise<{ valores: string[][]; truncado: boolean; total: number }> {
+    const res = await this.sheets(refreshToken).spreadsheets.values.get({
+      spreadsheetId: SheetsService.extrairId(planilhaId),
+      range: intervalo,
+    });
+    const todas = (res.data.values ?? []) as string[][];
+    return {
+      valores: todas.slice(0, SheetsService.MAX_LINHAS_ANALISE),
+      truncado: todas.length > SheetsService.MAX_LINHAS_ANALISE,
       total: todas.length,
     };
   }

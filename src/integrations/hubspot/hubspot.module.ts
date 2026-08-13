@@ -11,5 +11,8 @@ import { HubspotTools } from './hubspot.tools';
  */
 @Module({
   providers: [HubspotService, HubspotTools],
+  // Exportado para a coleta diaria: o HubSpot devolve o funil de hoje, nunca
+  // o de mes passado — a evolucao so existe se nos gravarmos.
+  exports: [HubspotService],
 })
 export class HubspotModule {}

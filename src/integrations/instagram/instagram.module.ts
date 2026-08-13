@@ -19,5 +19,8 @@ import { AiModule } from '../../ai/ai.module';
   imports: [AiModule],
   controllers: [InstagramController],
   providers: [InstagramService, InstagramTools, InstagramDmService],
+  // Exportado para a coleta diaria de metricas: o Instagram nao guarda
+  // historico, entao alguem precisa medir seguidores e alcance todo dia.
+  exports: [InstagramService],
 })
 export class InstagramModule {}

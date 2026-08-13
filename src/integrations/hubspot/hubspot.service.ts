@@ -123,6 +123,57 @@ export class HubspotService {
     return data;
   }
 
+  /**
+   * Consolida o funil inteiro: quantos negocios e quanto valor em cada estagio.
+   *
+   * Nao reaproveita `searchDeals` de proposito — aquele tem `limit: 10` fixo,
+   * porque atende a pergunta "acha o negocio da empresa X" no chat. Somar um
+   * funil com 10 de N negocios daria um numero errado com cara de certo, que e
+   * exatamente o defeito que um painel nao pode ter.
+   *
+   * Pagina ate o fim, com teto: um CRM grande nao pode travar a coleta diaria.
+   */
+  async resumoDoFunil(
+    token: string,
+    maxPaginas = 20,
+  ): Promise<{
+    porEstagio: Map<string, { quantidade: number; valor: number }>;
+    total: number;
+    truncado: boolean;
+  }> {
+    const porEstagio = new Map<string, { quantidade: number; valor: number }>();
+    let depois: string | undefined;
+    let total = 0;
+    let paginas = 0;
+
+    do {
+      const { data } = await this.http(token).get('/crm/v3/objects/deals', {
+        params: {
+          limit: 100,
+          properties: 'dealstage,amount',
+          ...(depois ? { after: depois } : {}),
+        },
+      });
+
+      for (const negocio of data?.results ?? []) {
+        const estagio = negocio?.properties?.dealstage ?? 'sem_estagio';
+        // `amount` chega como string, e vem vazio em negocio sem valor.
+        const valor = Number(negocio?.properties?.amount ?? 0) || 0;
+
+        const atual = porEstagio.get(estagio) ?? { quantidade: 0, valor: 0 };
+        atual.quantidade++;
+        atual.valor += valor;
+        porEstagio.set(estagio, atual);
+        total++;
+      }
+
+      depois = data?.paging?.next?.after;
+      paginas++;
+    } while (depois && paginas < maxPaginas);
+
+    return { porEstagio, total, truncado: !!depois };
+  }
+
   /** Lista os estagios do pipeline de negocios (label + id interno). */
   async getDealStages(token: string): Promise<{ label: string; id: string }[]> {
     const { data } = await this.http(token).get('/crm/v3/pipelines/deals');

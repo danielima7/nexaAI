@@ -249,6 +249,78 @@ model AiUsage {
   @@index([modelo, createdAt])
 }
 
+/// Uma medicao diaria de um numero do negocio do cliente.
+///
+/// POR QUE ESTA TABELA EXISTE: Instagram, HubSpot e Gmail so respondem sobre o
+/// AGORA. O `getMetricas` do Instagram devolve um total do periodo, nao uma
+/// serie; o HubSpot devolve o funil de hoje, nao o de mes passado. Nenhuma
+/// dessas APIs deixa perguntar "como estava em julho".
+///
+/// Ou seja: historico so existe se NOS gravarmos. E o passado nao volta — o
+/// grafico do cliente comeca no dia em que a coleta comecar, e nenhum codigo
+/// futuro consegue preencher o que nao foi medido. E por isso que a coleta
+/// entra antes da tela que a exibe.
+///
+/// Guardamos apenas AGREGADOS (seguidores, alcance, valor do funil). Nada de
+/// linha a linha com nome de pessoa: numero agregado nao identifica ninguem, e
+/// isso mantem a base fora do territorio de dado pessoal de terceiros.
+model Metrica {
+  id             String   @id @default(uuid())
+  organizationId String
+  /// Identificador da serie, no formato `fonte.metrica`.
+  /// Ex: `instagram.seguidores`, `hubspot.funil.valor`.
+  chave          String
+  /// Valor medido. Float (double) basta: sao agregados de painel, longe dos
+  /// 15 digitos significativos onde a precisao comecaria a doer.
+  valor          Float
+  /// Dia a que a medicao se refere — DATA, nao instante. O que interessa e
+  /// "quanto era no dia 12", nao a hora em que o cron rodou.
+  dia            DateTime @db.Date
+  createdAt      DateTime @default(now())
+
+  /// Uma medicao por serie por dia. E o que torna a coleta reexecutavel: um
+  /// restart do processo, ou uma rodada manual para tapar buraco, atualiza a
+  /// linha do dia em vez de criar um ponto duplicado no grafico.
+  @@unique([organizationId, chave, dia])
+  @@index([organizationId, chave, dia])
+}
+
+/// Um grafico salvo no painel de uma organizacao.
+///
+/// Existe porque planilha nao tem schema: a coluna que vira rotulo e a que vira
+/// valor mudam de cliente para cliente. Alguem precisa decidir esse mapeamento,
+/// e quem decide e a IA — UMA VEZ, na conversa em que o cliente pede o
+/// grafico. O resultado dessa decisao mora aqui.
+///
+/// Por que salvar em vez de inferir toda vez: inferir a cada abertura do painel
+/// custaria tokens em toda visita, deixaria a tela lenta e — pior — poderia
+/// mudar de opiniao entre uma visita e outra, fazendo o grafico do cliente
+/// mudar sozinho. Salvo, o painel renderiza em codigo puro, de graca e igual.
+model PainelCard {
+  id             String   @id @default(uuid())
+  organizationId String
+  /// Titulo exibido no card, com as palavras do proprio cliente.
+  titulo         String
+  /// De onde vem o dado: 'planilha_google' (unico hoje).
+  fonte          String
+  /// Como desenhar: 'barra' | 'linha' | 'numero'.
+  tipo           String
+  /// Mapeamento inferido pela IA. O formato depende de `fonte` e esta
+  /// documentado em src/painel/painel.types.ts.
+  ///
+  /// As colunas sao guardadas por NOME, nunca por indice: o cliente insere uma
+  /// coluna no meio da planilha sem avisar ninguem, e um indice guardado
+  /// passaria a apontar para o dado errado em silencio — o grafico continuaria
+  /// bonito, mostrando outra coisa. Nome que sumiu da planilha da erro visivel.
+  config         Json
+  /// Posicao na tela. Empate resolve por data de criacao.
+  ordem          Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([organizationId, ordem])
+}
+
 /// Registro de cada execucao de ferramenta pela IA (auditoria/logs).
 model OperationLog {
   id             String   @id @default(uuid())

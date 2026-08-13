@@ -488,6 +488,7 @@ export class ChatController {
     <div><h1>Katalli <small id="quem">· assistente</small></h1></div>
     <div class="acoes">
       <!--BOTAO_SUPORTE-->
+      <a class="integracoes" href="/painel">Painel</a>
       <a class="integracoes" href="/integracoes">Integracoes</a>
       <button class="sair" id="sair">Sair</button>
     </div>
