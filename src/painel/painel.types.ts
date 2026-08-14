@@ -50,11 +50,31 @@ export interface Ponto {
   ordem?: string;
 }
 
+/**
+ * Variacao do primeiro ao ultimo ponto da janela.
+ *
+ * So existe em serie temporal com pelo menos DOIS pontos: com um ponto nao ha
+ * variacao nenhuma, e inventar "0%" faria o cliente ler estabilidade onde na
+ * verdade nao ha medida.
+ */
+export interface Variacao {
+  /** Diferenca percentual. Ausente quando o valor inicial e zero. */
+  percentual?: number;
+  /** Diferenca absoluta — sempre calculavel. */
+  absoluto: number;
+  /** Quantos dias a janela cobre, para nomear o periodo ao cliente. */
+  dias: number;
+}
+
 /** Resultado de montar um card: dados prontos ou uma explicacao do porque nao. */
 export interface DadosCard {
   id: string;
   titulo: string;
   tipo: TipoGrafico;
+  /** Secao do painel (Redes sociais, CRM, Planilhas...). */
+  modulo: string;
+  /** Variacao no periodo, quando faz sentido calcular. */
+  variacao?: Variacao;
   pontos: Ponto[];
   /**
    * Quantas linhas foram ignoradas por nao terem numero na coluna de valor.

@@ -6,6 +6,7 @@ function card(parcial: Partial<DadosCard>): DadosCard {
     id: 'c1',
     titulo: 'Vendas',
     tipo: 'barra',
+    modulo: 'Planilhas',
     pontos: [],
     linhasLidas: 0,
     linhasIgnoradas: 0,

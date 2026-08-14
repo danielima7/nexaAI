@@ -6,7 +6,14 @@ import { HubspotService } from '../integrations/hubspot/hubspot.service';
 import { MetricaService } from '../metricas/metrica.service';
 import { Prisma } from '@prisma/client';
 import { montarSerie, Serie, SerieError } from './serie';
-import { ConfigPlanilha, DadosCard, TipoGrafico } from './painel.types';
+import {
+  ConfigPlanilha,
+  DadosCard,
+  Ponto,
+  TipoGrafico,
+  Variacao,
+} from './painel.types';
+import { INDICADORES, Modulo } from './indicadores';
 
 /**
  * Monta o painel de uma organizacao.
@@ -222,6 +229,8 @@ export class PainelService {
       titulo: card.titulo,
       tipo: card.tipo as TipoGrafico,
       pontos,
+      modulo: PainelService.moduloDoCard('metrica_historica', config),
+      variacao: PainelService.variacao(pontos, true, config.dias ?? 90),
       linhasLidas: pontos.length,
       linhasIgnoradas: 0,
       eixoTemporal: true,
@@ -279,12 +288,62 @@ export class PainelService {
       titulo: card.titulo,
       tipo: card.tipo as TipoGrafico,
       pontos,
+      modulo: 'CRM',
       linhasLidas: funil.total,
       linhasIgnoradas: 0,
       eixoTemporal: false,
       aviso: funil.truncado
         ? 'Seu CRM tem mais negócios do que conseguimos ler de uma vez; este total está subestimado.'
         : undefined,
+    };
+  }
+
+  /**
+   * Modulo a que o card pertence, para agrupar a tela por origem.
+   *
+   * Derivado da fonte e da chave, e nao gravado no PainelCard: assim um card
+   * criado antes desta tela existir ja aparece na secao certa, sem migracao.
+   */
+  static moduloDoCard(fonte: string, config: unknown): Modulo {
+    if (fonte === 'planilha_google') return 'Planilhas';
+    if (fonte === 'hubspot_funil') return 'CRM';
+
+    const chave = String((config as { chave?: string })?.chave ?? '');
+    const indicador = INDICADORES.find((i) => i.chave === chave);
+    if (indicador) return indicador.modulo;
+
+    // Serie de uma integracao que ainda nao esta no catalogo: cai pelo prefixo
+    // em vez de sumir da tela.
+    if (chave.startsWith('instagram.')) return 'Redes sociais';
+    if (chave.startsWith('hubspot.')) return 'CRM';
+    return 'Planilhas';
+  }
+
+  /**
+   * Variacao do primeiro ao ultimo ponto.
+   *
+   * Devolve undefined com menos de dois pontos: um ponto nao tem variacao, e
+   * mostrar "0%" faria o cliente ler estabilidade onde nao houve medida.
+   * Tambem so vale em serie temporal — "variacao" entre categorias (Cliente vs
+   * Gestor) nao significa nada.
+   */
+  private static variacao(
+    pontos: Ponto[],
+    eixoTemporal: boolean,
+    dias: number,
+  ): Variacao | undefined {
+    if (!eixoTemporal || pontos.length < 2) return undefined;
+
+    const primeiro = pontos[0].valor;
+    const ultimo = pontos[pontos.length - 1].valor;
+    const absoluto = ultimo - primeiro;
+
+    return {
+      absoluto,
+      // Sem base nao ha percentual: dividir por zero daria Infinity, e "cresceu
+      // infinito" e pior que nao dizer nada.
+      percentual: primeiro === 0 ? undefined : (absoluto / Math.abs(primeiro)) * 100,
+      dias,
     };
   }
 
@@ -329,6 +388,7 @@ export class PainelService {
       id: card.id,
       titulo: card.titulo,
       tipo: card.tipo as TipoGrafico,
+      modulo: 'Planilhas',
       pontos: serie.pontos,
       linhasLidas: serie.linhasLidas,
       linhasIgnoradas: serie.linhasIgnoradas,
@@ -338,13 +398,16 @@ export class PainelService {
 
   /** Card que nao pode ser montado, com o motivo no lugar dos dados. */
   private cardComErro(
-    card: { id: string; titulo: string; tipo: string },
+    card: { id: string; titulo: string; tipo: string; fonte: string; config: unknown },
     erro: string,
   ): DadosCard {
     return {
       id: card.id,
       titulo: card.titulo,
       tipo: card.tipo as TipoGrafico,
+      // O modulo vem mesmo no erro: o card precisa aparecer na secao certa,
+      // senao o cliente nao descobre qual integracao esta com problema.
+      modulo: PainelService.moduloDoCard(card.fonte, card.config),
       pontos: [],
       linhasLidas: 0,
       linhasIgnoradas: 0,

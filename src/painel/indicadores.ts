@@ -19,9 +19,27 @@ export type FonteIndicador =
   /** Consulta ao vivo do funil do HubSpot. */
   | 'hubspot_funil';
 
+/**
+ * Modulo do painel a que o card pertence.
+ *
+ * Agrupar por origem e o que torna um painel com 10 cards legivel: o dono da
+ * PME pensa "como estao minhas redes?" e "como esta meu comercial?", nao "como
+ * esta o card 7". A ordem do array e a ordem na tela.
+ */
+export const MODULOS = [
+  'Redes sociais',
+  'CRM',
+  'Planilhas',
+  'Financeiro',
+] as const;
+
+export type Modulo = (typeof MODULOS)[number];
+
 export interface Indicador {
   /** Id usado pela IA e gravado em PainelCard.fonte + config. */
   id: string;
+  /** Secao do painel onde o card aparece. */
+  modulo: Modulo;
   /** Titulo padrao do card. O cliente pode pedir outro. */
   titulo: string;
   fonte: FonteIndicador;
@@ -45,6 +63,7 @@ export interface Indicador {
 export const INDICADORES: Indicador[] = [
   {
     id: 'instagram_seguidores',
+    modulo: 'Redes sociais',
     titulo: 'Seguidores no Instagram',
     fonte: 'metrica_historica',
     tipo: 'linha',
@@ -54,6 +73,7 @@ export const INDICADORES: Indicador[] = [
   },
   {
     id: 'instagram_alcance',
+    modulo: 'Redes sociais',
     titulo: 'Alcance no Instagram',
     fonte: 'metrica_historica',
     tipo: 'linha',
@@ -63,6 +83,7 @@ export const INDICADORES: Indicador[] = [
   },
   {
     id: 'instagram_visualizacoes',
+    modulo: 'Redes sociais',
     titulo: 'Visualizacoes no Instagram',
     fonte: 'metrica_historica',
     tipo: 'linha',
@@ -72,6 +93,7 @@ export const INDICADORES: Indicador[] = [
   },
   {
     id: 'instagram_interacoes',
+    modulo: 'Redes sociais',
     titulo: 'Interacoes no Instagram',
     fonte: 'metrica_historica',
     tipo: 'linha',
@@ -81,6 +103,7 @@ export const INDICADORES: Indicador[] = [
   },
   {
     id: 'hubspot_funil',
+    modulo: 'CRM',
     titulo: 'Funil de vendas',
     fonte: 'hubspot_funil',
     tipo: 'barra',
@@ -89,6 +112,7 @@ export const INDICADORES: Indicador[] = [
   },
   {
     id: 'hubspot_funil_evolucao',
+    modulo: 'CRM',
     titulo: 'Valor do funil ao longo do tempo',
     fonte: 'metrica_historica',
     tipo: 'linha',
@@ -98,6 +122,7 @@ export const INDICADORES: Indicador[] = [
   },
   {
     id: 'hubspot_negocios',
+    modulo: 'CRM',
     titulo: 'Negocios em aberto',
     fonte: 'metrica_historica',
     tipo: 'linha',

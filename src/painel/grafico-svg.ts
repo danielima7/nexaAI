@@ -76,20 +76,52 @@ function passoDeRotulo(quantidade: number): number {
   return Math.max(1, Math.ceil(quantidade / 12));
 }
 
+/**
+ * Caminho de uma barra com a PONTA arredondada e a base reta.
+ *
+ * Um `rect rx` arredondaria os quatro cantos, inclusive onde a barra encosta na
+ * linha de base — e barra que nao encosta na base sugere que ela flutua, ou
+ * que o valor comeca acima do zero. O arredondamento e so na ponta do dado.
+ */
+function barraPath(
+  x: number,
+  largura: number,
+  yPonta: number,
+  yBase: number,
+): string {
+  const r = Math.min(4, largura / 2, Math.abs(yBase - yPonta));
+  const f = (n: number) => n.toFixed(1);
+  const paraCima = yPonta <= yBase;
+  const s = paraCima ? 1 : -1; // sentido do arredondamento
+
+  return (
+    `M${f(x)},${f(yBase)} ` +
+    `L${f(x)},${f(yPonta + r * s)} ` +
+    `Q${f(x)},${f(yPonta)} ${f(x + r)},${f(yPonta)} ` +
+    `L${f(x + largura - r)},${f(yPonta)} ` +
+    `Q${f(x + largura)},${f(yPonta)} ${f(x + largura)},${f(yPonta + r * s)} ` +
+    `L${f(x + largura)},${f(yBase)} Z`
+  );
+}
+
 /** Grafico de barras — para categorias. */
 function barras(pontos: Ponto[]): string {
   const { min, max } = escala(pontos);
   const amplitude = max - min;
   const larguraFaixa = AREA.largura / pontos.length;
-  const larguraBarra = Math.min(46, larguraFaixa * 0.62);
+  // Teto de 24px: barra grossa vira bloco de tinta e come o ar da faixa. O
+  // -2 garante o vao de 2px na cor da superficie entre barras vizinhas, que e
+  // o que as separa sem precisar desenhar contorno.
+  const larguraBarra = Math.max(
+    2,
+    Math.min(24, larguraFaixa * 0.62, larguraFaixa - 2),
+  );
   const y0 = MARGEM.topo + AREA.altura - ((0 - min) / amplitude) * AREA.altura;
   const passo = passoDeRotulo(pontos.length);
 
   const partes = pontos.map((p, i) => {
     const centro = MARGEM.esquerda + larguraFaixa * (i + 0.5);
     const y = MARGEM.topo + AREA.altura - ((p.valor - min) / amplitude) * AREA.altura;
-    const topo = Math.min(y, y0);
-    const altura = Math.max(1, Math.abs(y0 - y));
     const x = centro - larguraBarra / 2;
 
     const rotulo =
@@ -98,9 +130,8 @@ function barras(pontos: Ponto[]): string {
         : '';
 
     return (
-      `<rect class="barra" x="${x.toFixed(1)}" y="${topo.toFixed(1)}" ` +
-      `width="${larguraBarra.toFixed(1)}" height="${altura.toFixed(1)}" rx="3">` +
-      `<title>${esc(p.rotulo)}: ${porExtenso(p.valor)}</title></rect>${rotulo}`
+      `<path class="barra" d="${barraPath(x, larguraBarra, y, y0)}">` +
+      `<title>${esc(p.rotulo)}: ${porExtenso(p.valor)}</title></path>${rotulo}`
     );
   });
 
@@ -131,10 +162,13 @@ function linha(pontos: Ponto[]): string {
     coords.map((c) => `L${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' ') +
     ` L${coords[coords.length - 1].x.toFixed(1)},${y0.toFixed(1)} Z`;
 
+  // Marcador com raio 4 (8px de diametro) e anel de 2px na cor da superficie:
+  // sem o anel, dois pontos proximos ou um ponto sobre a linha viram uma
+  // mancha unica. O anel tambem engorda a area de toque no celular.
   const marcas = coords
     .map(
       (c) =>
-        `<circle class="ponto" cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="3.5">` +
+        `<circle class="ponto" cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="4">` +
         `<title>${esc(c.p.rotulo)}: ${porExtenso(c.p.valor)}</title></circle>`,
     )
     .join('');

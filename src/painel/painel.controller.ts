@@ -61,6 +61,18 @@ export class PainelController {
         id: c.id,
         titulo: c.titulo,
         tipo: c.tipo,
+        modulo: c.modulo,
+        // Percentual arredondado no servidor: a tela nao decide precisao.
+        variacao: c.variacao
+          ? {
+              percentual:
+                c.variacao.percentual === undefined
+                  ? undefined
+                  : Math.round(c.variacao.percentual * 10) / 10,
+              absoluto: porExtenso(c.variacao.absoluto),
+              dias: c.variacao.dias,
+            }
+          : undefined,
         erro: c.erro,
         aviso: c.aviso,
         svg: c.erro ? undefined : desenhar(c),
@@ -135,24 +147,60 @@ export class PainelController {
   header a:not(.logo):hover { border-color:var(--tinta-fraca); color:var(--tinta); }
   header a:focus-visible { outline:2px solid var(--azul-vivo); outline-offset:2px; }
 
-  main { max-width:820px; margin:0 auto; padding:32px 20px 72px; }
+  main { max-width:1120px; margin:0 auto; padding:28px 20px 72px; }
+
+  /* ---- Faixa de indicadores (topo) ----
+     Numero grande + variacao. E o que o dono da PME olha primeiro; os
+     graficos abaixo explicam o numero, nao o substituem. */
+  .indicadores { display:grid; gap:12px; margin-bottom:34px;
+                 grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); }
+  .kpi { background:var(--painel); border:1px solid var(--borda); border-radius:14px;
+         padding:16px 18px; display:flex; flex-direction:column; gap:6px; }
+  .kpi .rot { color:var(--tinta-fraca); font-size:12.5px; line-height:1.35; }
+  /* Figuras proporcionais: tabular-nums daria a todo digito a largura do zero
+     e deixaria o numero frouxo neste tamanho. Tabular fica so em coluna. */
+  .kpi .num { font-size:27px; font-weight:700; letter-spacing:-.025em; }
+  .kpi .rodape { display:flex; align-items:center; gap:7px; flex-wrap:wrap;
+                 font-size:12px; color:var(--tinta-tenue); }
+
+  /* A seta e o sinal carregam a direcao junto com a cor: em deuteranopia o
+     verde e o vermelho ficam a uma distancia de 4,1 (ΔE) — indistinguiveis.
+     Cor sozinha nao pode ser o unico canal. */
+  .delta { display:inline-flex; align-items:center; gap:4px; font-weight:650;
+           padding:2px 8px; border-radius:99px; font-size:12px; }
+  .delta.sobe { color:var(--ok); background:rgba(34,197,94,.10); border:1px solid rgba(34,197,94,.24); }
+  .delta.desce { color:var(--erro); background:rgba(248,113,113,.10); border:1px solid rgba(248,113,113,.24); }
+  .delta.igual { color:var(--tinta-fraca); border:1px solid var(--borda-forte); }
+
+  /* ---- Modulos ---- */
+  .modulo { margin-bottom:34px; }
+  .modulo > h2 { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px;
+                 text-transform:uppercase; letter-spacing:.12em; color:var(--azul-vivo);
+                 margin:0 0 12px; font-weight:600; display:flex; align-items:center; gap:10px; }
+  .modulo > h2::after { content:''; flex:1; height:1px; background:var(--borda); }
+  .grade-cards { display:grid; gap:14px;
+                 grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); }
 
   .card { background:var(--painel); border:1px solid var(--borda); border-radius:14px;
-          padding:20px; margin-bottom:16px; }
-  .card h2 { font-size:16px; margin:0; font-weight:650; letter-spacing:-.01em; }
-  .cabeca { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:4px; }
-  .total { margin-left:auto; font-size:20px; font-weight:700; letter-spacing:-.02em;
-           font-variant-numeric:tabular-nums; }
-  .sub { color:var(--tinta-tenue); font-size:12.5px; margin:0 0 14px; }
+          padding:18px; }
+  .card h3 { font-size:15px; margin:0; font-weight:650; letter-spacing:-.01em; }
+  .cabeca { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:2px; }
+  .total { margin-left:auto; font-size:19px; font-weight:700; letter-spacing:-.02em; }
+  .sub { color:var(--tinta-tenue); font-size:12.5px; margin:0 0 14px;
+         display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 
   .tela { width:100%; overflow-x:auto; }
   .tela svg { width:100%; height:auto; display:block; min-width:340px; }
-  .barra { fill:var(--azul); }
-  .linha { fill:none; stroke:var(--azul-vivo); stroke-width:2.5; stroke-linejoin:round; }
-  .area { fill:rgba(37,99,235,.16); stroke:none; }
-  .ponto { fill:var(--azul-vivo); }
+  .barra { fill:var(--azul-vivo); }
+  .linha { fill:none; stroke:var(--azul-vivo); stroke-width:2;
+           stroke-linejoin:round; stroke-linecap:round; }
+  /* Lavagem de ~10%: area saturada compete com a linha, que e quem carrega o dado. */
+  .area { fill:rgba(59,130,246,.10); stroke:none; }
+  /* Anel na cor do card, nao um contorno colorido: separa sem somar tinta. */
+  .ponto { fill:var(--azul-vivo); stroke:var(--painel); stroke-width:2; }
   .base { stroke:var(--borda-forte); stroke-width:1; }
-  .grade { stroke:var(--borda); stroke-width:1; stroke-dasharray:3 4; }
+  /* Grade solida e fina. Tracejado vibra e disputa atencao com o dado. */
+  .grade { stroke:var(--borda); stroke-width:1; }
   .eixo { fill:var(--tinta-tenue); font-size:11px;
           font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
 
@@ -177,7 +225,7 @@ export class PainelController {
   .oculto { display:none !important; }
 
   .legais { display:flex; flex-wrap:wrap; justify-content:center; gap:6px 18px;
-            padding:8px 16px 0; max-width:820px; margin:0 auto; }
+            padding:8px 16px 0; max-width:1120px; margin:0 auto; }
   .legais a { color:var(--tinta-tenue); font-size:12.5px; text-decoration:none; }
   .legais a:hover { color:var(--tinta-fraca); text-decoration:underline; }
   .legais a:focus-visible { outline:2px solid var(--azul-vivo); outline-offset:2px; border-radius:3px; }
@@ -210,7 +258,8 @@ export class PainelController {
       <p style="margin-top:18px"><a href="/chat">Ir para o chat</a></p>
     </div>
 
-    <div id="cards"></div>
+    <div id="indicadores" class="indicadores oculto"></div>
+    <div id="modulos"></div>
   </main>
 
   <nav class="legais" aria-label="Documentos institucionais">
@@ -225,7 +274,11 @@ export class PainelController {
   const carregando = document.getElementById('carregando');
   const semSessao = document.getElementById('semSessao');
   const vazio = document.getElementById('vazio');
-  const cards = document.getElementById('cards');
+  const faixaIndicadores = document.getElementById('indicadores');
+  const modulos = document.getElementById('modulos');
+
+  // Ordem fixa das secoes. O que nao estiver aqui vai para o fim.
+  const ORDEM_MODULOS = ['Redes sociais', 'CRM', 'Planilhas', 'Financeiro'];
 
   function semAcesso() {
     carregando.classList.add('oculto');
@@ -239,11 +292,46 @@ export class PainelController {
     return el;
   }
 
+  /**
+   * Selo de variacao. A seta e o sinal vem sempre — a cor e reforco, nunca o
+   * unico canal, porque verde e vermelho sao praticamente iguais para quem tem
+   * deuteranopia.
+   */
+  function selo(v) {
+    const sobe = v.percentual === undefined
+      ? (parseFloat(String(v.absoluto).replace(/\\./g, '').replace(',', '.')) || 0) > 0
+      : v.percentual > 0;
+    const zerado = v.percentual === 0;
+
+    const classe = zerado ? 'igual' : (sobe ? 'sobe' : 'desce');
+    const seta = zerado ? '=' : (sobe ? '▲' : '▼');
+    const texto = v.percentual === undefined
+      ? seta + ' ' + v.absoluto
+      : seta + ' ' + (v.percentual > 0 ? '+' : '') + String(v.percentual).replace('.', ',') + '%';
+
+    const el = elemento('span', 'delta ' + classe, texto);
+    el.title = 'Variação nos últimos ' + v.dias + ' dias';
+    return el;
+  }
+
+  /** Um indicador da faixa do topo: rotulo, numero grande e variacao. */
+  function montarKpi(c) {
+    const kpi = elemento('div', 'kpi');
+    kpi.appendChild(elemento('div', 'rot', c.titulo));
+    kpi.appendChild(elemento('div', 'num', c.total));
+
+    const rodape = elemento('div', 'rodape');
+    if (c.variacao) rodape.appendChild(selo(c.variacao));
+    rodape.appendChild(elemento('span', null, c.modulo));
+    kpi.appendChild(rodape);
+    return kpi;
+  }
+
   function montarCard(c) {
     const card = elemento('div', 'card');
 
     const cabeca = elemento('div', 'cabeca');
-    cabeca.appendChild(elemento('h2', null, c.titulo));
+    cabeca.appendChild(elemento('h3', null, c.titulo));
     if (c.total !== undefined) {
       cabeca.appendChild(elemento('div', 'total', c.total));
     }
@@ -262,9 +350,10 @@ export class PainelController {
 
     const lidas = c.linhasLidas === 1 ? '1 linha lida' : c.linhasLidas + ' linhas lidas';
 
-    card.appendChild(
-      elemento('p', 'sub', c.pontos + ' ' + unidade + ' · ' + lidas)
-    );
+    const sub = elemento('p', 'sub');
+    if (c.variacao) sub.appendChild(selo(c.variacao));
+    sub.appendChild(elemento('span', null, c.pontos + ' ' + unidade + ' · ' + lidas));
+    card.appendChild(sub);
 
     const tela = elemento('div', 'tela');
     // O SVG vem do servidor, com todo texto de planilha ja escapado la.
@@ -305,7 +394,37 @@ export class PainelController {
         return;
       }
 
-      dados.cards.forEach(function (c) { cards.appendChild(montarCard(c)); });
+      // Faixa do topo: so os cards que renderizaram. Um card com erro nao tem
+      // numero para exibir, e um KPI vazio no topo do painel parece defeito.
+      const comNumero = dados.cards.filter(function (c) { return !c.erro; });
+      if (comNumero.length > 0) {
+        faixaIndicadores.classList.remove('oculto');
+        comNumero.forEach(function (c) {
+          faixaIndicadores.appendChild(montarKpi(c));
+        });
+      }
+
+      // Agrupa por modulo, na ordem fixa. O cliente pensa "como estao minhas
+      // redes?", nao "como esta o card 7".
+      const porModulo = {};
+      dados.cards.forEach(function (c) {
+        const m = c.modulo || 'Outros';
+        (porModulo[m] = porModulo[m] || []).push(c);
+      });
+
+      const nomes = Object.keys(porModulo).sort(function (a, b) {
+        const ia = ORDEM_MODULOS.indexOf(a), ib = ORDEM_MODULOS.indexOf(b);
+        return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+      });
+
+      nomes.forEach(function (nome) {
+        const secao = elemento('section', 'modulo');
+        secao.appendChild(elemento('h2', null, nome));
+        const grade = elemento('div', 'grade-cards');
+        porModulo[nome].forEach(function (c) { grade.appendChild(montarCard(c)); });
+        secao.appendChild(grade);
+        modulos.appendChild(secao);
+      });
     } catch (e) {
       carregando.textContent =
         'Não consegui carregar o painel agora. Tente recarregar a página.';
