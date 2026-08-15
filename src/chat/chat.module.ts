@@ -6,6 +6,7 @@ import { ChatAccountService } from './chat-account.service';
 import { InviteService } from './invite.service';
 import { SignupController } from './signup.controller';
 import { SignupService } from './signup.service';
+import { LimitadorTaxaService } from './limitador-taxa.service';
 import { AiModule } from '../ai/ai.module';
 import { UploadsModule } from '../uploads/uploads.module';
 
@@ -17,7 +18,13 @@ import { UploadsModule } from '../uploads/uploads.module';
 @Module({
   imports: [AiModule, UploadsModule],
   controllers: [ChatController, InviteController, SignupController],
-  providers: [ChatAuthService, ChatAccountService, InviteService, SignupService],
+  providers: [
+    ChatAuthService,
+    ChatAccountService,
+    InviteService,
+    SignupService,
+    LimitadorTaxaService,
+  ],
   // ChatAuthService e exportado para a tela de integracoes reaproveitar a
   // mesma sessao do chat, sem exigir um segundo login.
   exports: [ChatAccountService, InviteService, ChatAuthService],

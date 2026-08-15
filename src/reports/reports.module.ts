@@ -10,6 +10,8 @@ import { AlertService } from './alert.service';
 import { AlertTools } from './alert.tools';
 import { MonitorCustoService } from './monitor-custo.service';
 import { MonitorCreditoService } from './monitor-credito.service';
+import { MonitorConexoesService } from './monitor-conexoes.service';
+import { SaudeModule } from '../saude/saude.module';
 
 /**
  * Avisos proativos: o Katalli falando sem ser perguntado.
@@ -29,7 +31,7 @@ import { MonitorCreditoService } from './monitor-credito.service';
  *    ar). Um nao cobre o outro: saldo que acaba devagar nunca encosta no teto.
  */
 @Module({
-  imports: [AiModule, WhatsappModule, GoogleModule],
+  imports: [AiModule, WhatsappModule, GoogleModule, SaudeModule],
   providers: [
     NotificacaoService,
     ReportScheduleService,
@@ -39,6 +41,7 @@ import { MonitorCreditoService } from './monitor-credito.service';
     AlertTools,
     MonitorCustoService,
     MonitorCreditoService,
+    MonitorConexoesService,
   ],
   exports: [DailyReportService, ReportScheduleService, AlertService],
 })

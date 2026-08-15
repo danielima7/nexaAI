@@ -12,6 +12,7 @@ import {
 import type { Request, Response } from 'express';
 import { SignupService } from './signup.service';
 import { ChatAuthService } from './chat-auth.service';
+import { LimitadorTaxaService, REGRAS } from './limitador-taxa.service';
 
 /**
  * Cadastro aberto: `GET /criar-conta` serve a pagina, `POST /criar-conta`
@@ -27,6 +28,7 @@ export class SignupController {
   constructor(
     private readonly signup: SignupService,
     private readonly auth: ChatAuthService,
+    private readonly limitador: LimitadorTaxaService,
   ) {}
 
   private origem(req: Request): string {
@@ -63,12 +65,17 @@ export class SignupController {
       throw new HttpException('Nao encontrado.', HttpStatus.NOT_FOUND);
     }
 
-    // Reusa o limitador do login: 8 tentativas por IP a cada 15 minutos. Sem
-    // isso, um script criaria centenas de organizacoes em minutos — cada uma
-    // com direito ao seu teto de mensagens, o que soma custo real.
-    if (!this.auth.podeTentar(this.origem(req))) {
+    // Limite PROPRIO, mais apertado que o do login: 3 contas por hora por IP.
+    //
+    // Antes isto reusava o balde do login (8 a cada 15 min), o que misturava
+    // duas coisas de custo muito diferente — errar a senha nao custa nada, e
+    // cada organizacao criada nasce com direito ao seu teto de mensagens
+    // gratuitas. Alem disso, uma tentativa de login gastava cota de cadastro.
+    const origem = this.origem(req);
+    if (!this.limitador.permitir(origem, REGRAS.CADASTRO)) {
+      const espera = this.limitador.segundosParaLiberar(origem, REGRAS.CADASTRO);
       throw new HttpException(
-        'Muitas tentativas. Tente novamente em alguns minutos.',
+        `Muitas contas criadas deste acesso. Tente de novo em ${Math.ceil(espera / 60)} minuto(s).`,
         HttpStatus.TOO_MANY_REQUESTS,
       );
     }

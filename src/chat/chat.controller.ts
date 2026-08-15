@@ -26,6 +26,7 @@ import {
 import { UploadService } from '../uploads/upload.service';
 import { SuporteService } from '../suporte/suporte.service';
 import { LimiteUsoService } from '../ai/limite-uso.service';
+import { LimitadorTaxaService, REGRAS } from './limitador-taxa.service';
 
 /**
  * Chat Web do Katalli: uma pagina simples servida pelo backend + um endpoint
@@ -51,6 +52,7 @@ export class ChatController {
     private readonly uploads: UploadService,
     private readonly suporte: SuporteService,
     private readonly limites: LimiteUsoService,
+    private readonly limitador: LimitadorTaxaService,
   ) {}
 
   /** Identificador da origem para o limite de tentativas de login. */
@@ -157,6 +159,7 @@ export class ChatController {
   @Post('chat')
   async chat(
     @Body() body: { message: string; sessionId: string },
+    @Req() req: Request,
     @Headers('authorization') authorization?: string,
   ): Promise<{ reply: string }> {
     const sessao = this.auth.validarToken(this.tokenDoHeader(authorization));
@@ -164,6 +167,21 @@ export class ChatController {
       throw new HttpException(
         'Sessao invalida ou expirada.',
         HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    // Limite por ORGANIZACAO, nao por IP: a conta e o recurso que gasta
+    // dinheiro, e um escritorio inteiro atras do mesmo IP nao pode disputar
+    // a mesma cota. Conferido depois da sessao para nao gastar contagem com
+    // requisicao sem credencial.
+    if (!this.limitador.permitir(sessao.organizationId, REGRAS.MENSAGEM)) {
+      const espera = this.limitador.segundosParaLiberar(
+        sessao.organizationId,
+        REGRAS.MENSAGEM,
+      );
+      throw new HttpException(
+        `Muitas mensagens seguidas. Aguarde ${espera}s e tente de novo.`,
+        HttpStatus.TOO_MANY_REQUESTS,
       );
     }
 

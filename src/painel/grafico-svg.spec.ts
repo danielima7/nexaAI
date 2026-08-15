@@ -117,6 +117,63 @@ describe('desenhar', () => {
   it('devolve vazio quando nao ha ponto nenhum', () => {
     expect(desenhar(card({ pontos: [] }))).toBe('');
   });
+
+  describe('specs de marca', () => {
+    /**
+     * Largura da primeira barra: o X final do caminho menos o inicial.
+     * O caminho comeca no canto esquerdo da base e fecha no canto direito.
+     */
+    function larguraDaBarra(svg: string): number {
+      const m = svg.match(/class="barra" d="M([\d.]+),[^"]*L([\d.]+),[^"]*Z"/);
+      return m ? Number(m[2]) - Number(m[1]) : NaN;
+    }
+
+    it('nunca desenha barra mais grossa que 24px', () => {
+      // Barra grossa vira bloco de tinta e come o ar da faixa.
+      const duas = desenhar(
+        card({
+          pontos: [
+            { rotulo: 'a', valor: 10 },
+            { rotulo: 'b', valor: 20 },
+          ],
+        }),
+      );
+      expect(larguraDaBarra(duas)).toBeLessThanOrEqual(24);
+
+      // Mesmo com um unico ponto, onde a faixa ocupa o grafico inteiro.
+      const uma = desenhar(card({ pontos: [{ rotulo: 'a', valor: 10 }] }));
+      expect(larguraDaBarra(uma)).toBeLessThanOrEqual(24);
+    });
+
+    it('desenha barra como caminho, nao como retangulo arredondado', () => {
+      // `rect rx` arredondaria tambem onde a barra encosta na base, e barra
+      // que nao encosta sugere que o valor comeca acima do zero.
+      const svg = desenhar(card({ pontos: [{ rotulo: 'a', valor: 10 }] }));
+      expect(svg).toContain('<path class="barra"');
+      expect(svg).not.toContain('<rect class="barra"');
+      // Q = as curvas da ponta; o caminho fecha com Z na base reta.
+      expect(svg).toMatch(/class="barra" d="M[^"]*Q[^"]*Q[^"]*Z"/);
+    });
+
+    it('usa marcador de 8px de diametro na linha', () => {
+      const svg = desenhar(
+        card({
+          tipo: 'linha',
+          pontos: [
+            { rotulo: 'a', valor: 1 },
+            { rotulo: 'b', valor: 2 },
+          ],
+        }),
+      );
+      expect(svg).toContain('r="4"');
+    });
+
+    it('nao usa grade tracejada', () => {
+      // Tracejado vibra e disputa atencao com o dado.
+      const svg = desenhar(card({ pontos: [{ rotulo: 'a', valor: 10 }] }));
+      expect(svg).not.toContain('stroke-dasharray');
+    });
+  });
 });
 
 describe('abreviar', () => {

@@ -327,7 +327,9 @@ export class PainelService {
    * Tambem so vale em serie temporal — "variacao" entre categorias (Cliente vs
    * Gestor) nao significa nada.
    */
-  private static variacao(
+  // Publica por ser funcao pura com casos de borda que precisam de teste
+  // proprio (base zero, ponto unico, eixo de categoria).
+  static variacao(
     pontos: Ponto[],
     eixoTemporal: boolean,
     dias: number,

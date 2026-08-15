@@ -15,6 +15,7 @@ import type { Response } from 'express';
 import { ConnectionsService } from './connections.service';
 import { ChatAuthService } from '../chat/chat-auth.service';
 import { PROVEDORES, acharProvedor } from './provider-catalog';
+import { ValidadorConexoesService } from '../saude/validador-conexoes.service';
 
 /**
  * Tela de integracoes: onde o cliente conecta as proprias contas.
@@ -32,6 +33,7 @@ export class ConnectionsController {
   constructor(
     private readonly connections: ConnectionsService,
     private readonly auth: ChatAuthService,
+    private readonly validador: ValidadorConexoesService,
   ) {}
 
   /** Exige sessao valida e devolve a organizacao dela. */
@@ -75,6 +77,20 @@ export class ConnectionsController {
         urlOAuth: p.rotaOAuth ? `${p.rotaOAuth}?org=${organizationId}` : null,
       })),
     };
+  }
+
+  /**
+   * Estado REAL das credenciais: cada uma testada contra a API do provedor.
+   *
+   * Endpoint separado do `/status` de proposito. O status monta a tela na hora
+   * (so olha o banco); este aqui gasta uma chamada de rede por integracao e
+   * chega depois, atualizando os selos. Junta-los faria a pagina inteira
+   * esperar pelo provedor mais lento.
+   */
+  @Get('saude')
+  async saude(@Headers('authorization') authorization?: string) {
+    const organizationId = this.exigirSessao(authorization);
+    return { diagnosticos: await this.validador.verificarTodos(organizationId) };
   }
 
   /** Salva a credencial de um provedor de token (ja cifrada pelo service). */
@@ -209,6 +225,13 @@ export class ConnectionsController {
   .selo { font-size:12px; padding:4px 10px; border-radius:99px; border:1px solid var(--borda-forte);
           color:var(--tinta-fraca); white-space:nowrap; }
   .selo.on { color:var(--ok); border-color:#166534; background:rgba(34,197,94,.12); }
+  /* Autorizacao morta. O texto do selo tambem muda para "Reconectar": quem nao
+     distingue as cores precisa conseguir LER que ha algo a fazer. */
+  .selo.expirada { color:var(--erro); border-color:#7f1d1d; background:rgba(248,113,113,.12); }
+  /* O botao so fica em destaque quando ha acao pendente de verdade. */
+  button.urgente { background:var(--erro); color:#450a0a; }
+  button.urgente:hover:not(:disabled) { background:#fca5a5; }
+  .aviso-conexao { color:var(--erro); }
   .acoes { margin-left:auto; display:flex; gap:8px; }
 
   button { padding:9px 16px; border-radius:9px; border:none; background:var(--azul); color:#fff;
@@ -314,6 +337,9 @@ export class ConnectionsController {
     const selo = document.createElement('span');
     selo.className = 'selo' + (item.conectado ? ' on' : '');
     selo.textContent = item.conectado ? 'Conectado' : 'Nao conectado';
+    // Guardado no elemento para a verificacao de saude achar este cartao
+    // quando a resposta chegar, sem depender da ordem da lista.
+    selo.dataset.provedor = item.id;
 
     const acoes = document.createElement('div');
     acoes.className = 'acoes';
@@ -325,6 +351,7 @@ export class ConnectionsController {
       const botao = document.createElement('button');
       botao.textContent = item.conectado ? 'Reconectar' : 'Conectar';
       botao.onclick = () => { location.href = item.urlOAuth; };
+      botao.dataset.reconectar = item.id;
       acoes.appendChild(botao);
     } else {
       const form = document.createElement('form');
@@ -458,9 +485,61 @@ export class ConnectionsController {
 
       carregando.classList.add('oculto');
       conteudo.classList.remove('oculto');
+
+      // Sem await: a tela ja esta montada. Os selos se corrigem quando as
+      // verificacoes voltarem — travar a pagina esperando o provedor mais
+      // lento pioraria a experiencia de quem so quer conectar mais uma conta.
+      verificarSaude();
     } catch (err) {
       if (err.message !== 'sessao') {
         carregando.textContent = 'Nao foi possivel carregar as integracoes.';
+      }
+    }
+  }
+
+  /**
+   * Confere se cada credencial AINDA funciona e corrige os selos.
+   *
+   * "Conectado" olhando so o banco e mentira previsivel: a autorizacao do
+   * Google expira sozinha e a tela continuaria verde enquanto o painel do
+   * cliente mostra erro.
+   */
+  async function verificarSaude() {
+    let diagnosticos;
+    try {
+      const r = await api('/integracoes/saude');
+      diagnosticos = (await r.json()).diagnosticos || [];
+    } catch (err) {
+      // Falhar aqui nao pode piorar a tela: fica o estado do banco, que e o
+      // que se mostrava antes desta verificacao existir.
+      return;
+    }
+
+    for (const d of diagnosticos) {
+      const selo = document.querySelector('.selo[data-provedor="' + d.provedor + '"]');
+      if (!selo) continue;
+
+      if (d.estado === 'expirada') {
+        selo.textContent = 'Reconectar';
+        selo.className = 'selo expirada';
+        selo.title = d.detalhe || '';
+
+        const card = selo.closest('.card');
+        const botao = card && card.querySelector('[data-reconectar]');
+        if (botao) botao.classList.add('urgente');
+
+        // O motivo por extenso, para o cliente saber o que fazer sem
+        // depender de passar o mouse em cima do selo.
+        if (card && d.detalhe && !card.querySelector('.aviso-conexao')) {
+          const p = document.createElement('p');
+          p.className = 'ajuda aviso-conexao';
+          p.textContent = d.detalhe;
+          card.appendChild(p);
+        }
+      } else if (d.estado === 'indeterminada') {
+        // Nao sabemos: nao mexe no selo. Marcar como quebrada por causa de
+        // rede instavel mandaria o cliente refazer um OAuth que estava bom.
+        selo.title = d.detalhe || '';
       }
     }
   }
