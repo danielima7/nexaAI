@@ -1,7 +1,9 @@
 # Deploy do Katalli em VPS
 
 Sobe a aplicacao, o Postgres e o proxy com TLS em uma VPS Linux.
-Testado com Hetzner CX22 (2 vCPU, 4 GB) + Ubuntu 24.04 + dominio `.com.br`.
+Testado com Hetzner CX22 (2 vCPU, 4 GB) + Ubuntu 24.04.
+
+Dominio em uso: **katalli.com**, registrado no Squarespace (validade 05/08/2027).
 
 Arquitetura: o Caddy e o unico container exposto a internet (portas 80 e 443).
 A aplicacao e o banco nao publicam porta nenhuma no host — so se enxergam pela
@@ -10,10 +12,10 @@ para as senhas do chat nem para as chaves que o cliente cola em `/integracoes`.
 
 ---
 
-## 1. Dominio (Registro.br)
+## 1. Dominio (Squarespace)
 
-Registre em <https://registro.br> (~R$40/ano, exige CPF ou CNPJ). Deixe para
-apontar o DNS no passo 3, quando ja houver um IP.
+`katalli.com` ja esta registrado. Nada a fazer aqui — o DNS e apontado no
+passo 3, quando ja houver um IP para colocar no registro.
 
 ## 2. Servidor
 
@@ -44,18 +46,31 @@ usermod -aG docker katalli
 
 Saia e entre de novo como `katalli` (o grupo docker so vale em sessao nova).
 
-## 3. DNS
+## 3. DNS (Squarespace)
 
-No Registro.br, em "Editar zona DNS", crie:
+Painel do Squarespace → **Domains → katalli.com → DNS Settings → Add record**:
 
-| Tipo | Nome | Valor |
+| Tipo | Host | Valor |
 |---|---|---|
 | A | `@` | IPv4 da VPS |
 | A | `www` | IPv4 da VPS |
 
-**Espere propagar antes do passo 5.** O Caddy valida o dominio com a Let's
-Encrypt na inicializacao; se o DNS ainda nao resolver, a emissao falha.
-Confirme com `dig +short seudominio.com.br` (deve devolver o IP da VPS).
+Os DOIS registros sao necessarios: o Caddy pede um certificado por nome, e o
+bloco `www` do `Caddyfile` redireciona para o dominio nu. Sem o A de `www`,
+quem digitar "www.katalli.com" leva erro de certificado.
+
+**Remova o que o Squarespace deixou apontando para os servidores dele.** Um
+dominio recem-comprado costuma vir com registros de parking ou de encaminhamento;
+se sobrar um A ou ALIAS no `@`, o trafego vai para o Squarespace e a validacao da
+Let's Encrypt falha. Nao use "Forwarding" — tem que ser registro A no IP.
+
+**Espere propagar antes do passo 5.** O Caddy valida o dominio na inicializacao;
+se o DNS ainda nao resolver, a emissao falha e ele entra em backoff.
+
+```bash
+dig +short katalli.com        # deve devolver o IP da VPS
+dig +short www.katalli.com    # idem
+```
 
 ## 4. Codigo e configuracao
 
@@ -70,10 +85,27 @@ seu `.env` de desenvolvimento:
 | Variavel | Valor em producao |
 |---|---|
 | `DATABASE_URL` | host `postgres`, **nao** `localhost` — e o nome do servico no Compose |
-| `PUBLIC_BASE_URL` | `https://seudominio.com.br` (sai do ngrok) |
-| `GOOGLE_REDIRECT_URI` | `https://seudominio.com.br/google/callback` |
+| `PUBLIC_BASE_URL` | `https://katalli.com` (sai do ngrok) |
+| `GOOGLE_REDIRECT_URI` | `https://katalli.com/google/callback` |
+| `INSTAGRAM_REDIRECT_URI` | `https://katalli.com/instagram/callback` |
+| `ASAAS_BASE_URL` | `https://api.asaas.com/v3` (producao) |
+| `ASAAS_API_KEY` | chave `$aact_prod_...` — tem que casar com a URL acima, senao o service RECUSA a consulta |
 | `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | senha nova e forte, nao a de desenvolvimento |
 | `CONNECTION_ENCRYPTION_KEY` | **a mesma** de onde vierem os dados; uma chave nova torna as credenciais ja cifradas ilegiveis, sem recuperacao |
+
+As duas URLs de callback tambem precisam ser cadastradas do lado do provedor,
+com o valor IDENTICO — qualquer diferenca (barra no fim, `www`, `http`) resulta
+em `redirect_uri_mismatch` na hora de conectar:
+
+- **Google Cloud Console** → APIs & Services → Credentials → o seu OAuth client
+  → *Authorized redirect URIs* → `https://katalli.com/google/callback`
+- **App da Meta** → Login do Facebook → *Valid OAuth Redirect URIs* →
+  `https://katalli.com/instagram/callback`
+
+> ⚠️ Enquanto a tela de consentimento do Google estiver em **"Testing"**, todo
+> refresh token expira em 7 dias e o painel/resumo diario quebram semanalmente
+> para todos os clientes — medido tres vezes. No mesmo Console:
+> **OAuth consent screen → Publish app**. Nenhuma mudanca no codigo contorna isso.
 
 > ⚠️ **Todo valor que contenha `$` precisa de aspas simples** — hoje isso e a
 > `ASAAS_API_KEY`. Sem elas o Compose entrega a variavel VAZIA ao container e a
@@ -84,7 +116,7 @@ Depois, o dominio do proxy:
 
 ```bash
 cp .env.caddy.example .env.caddy
-nano .env.caddy   # KATALLI_DOMINIO=seudominio.com.br  (sem https://, sem barra final)
+nano .env.caddy   # KATALLI_DOMINIO=katalli.com  (sem https://, sem barra final)
 ```
 
 ## 5. Subir
@@ -100,7 +132,7 @@ Acompanhe a emissao do certificado:
 docker compose -f docker-compose.prod.yml logs -f caddy
 ```
 
-Verifique: `https://seudominio.com.br/health` deve responder, e o cadeado do
+Verifique: `https://katalli.com/health` deve responder, e o cadeado do
 navegador deve estar valido.
 
 > **Nao repita `up --build` em loop enquanto depura TLS.** A Let's Encrypt
@@ -112,11 +144,32 @@ navegador deve estar valido.
 ## 6. Depois do primeiro deploy
 
 - **Google Cloud Console** → Credenciais → cliente OAuth "Katalli Web": adicione
-  `https://seudominio.com.br/google/callback` aos URIs de redirecionamento
+  `https://katalli.com/google/callback` aos URIs de redirecionamento
   autorizados. Sem isso o Google devolve `redirect_uri_mismatch`.
 - **Reconecte o Google** pelo chat (`katalli_conectar_google`): o refresh token
   antigo foi emitido para a URI do ngrok.
+- **Reconecte o Instagram** pelo mesmo motivo, se estiver em uso.
 - **Crie o acesso ao chat**: veja *Operação → Dar acesso a um cliente*, abaixo.
+
+## Tarefas agendadas (o que roda sozinho)
+
+O container `app` precisa ficar de pe: estas rotinas nao tem fila nem retentativa
+externa, e o que nao rodou no horario nao roda depois.
+
+| Horario (America/Sao_Paulo) | O que faz | Se nao rodar |
+|---|---|---|
+| 03:10 | Coleta as metricas do dia (Instagram, HubSpot) | **Buraco permanente** no grafico de evolucao. O Instagram nao informa quantos seguidores havia ontem; o dado nao volta. |
+| 07:40 | Verifica se as autorizacoes dos clientes ainda funcionam | Voce descobre a integracao quebrada pelo cliente reclamando |
+| 08:00 (por cliente) | Resumo diario | O cliente nao recebe o resumo daquele dia |
+| a cada 30 min | Compara o gasto de IA do dia com o teto | Um consumo anormal passa sem aviso |
+
+Consequencia pratica: **evite `up --build` entre 03:00 e 04:00**. Um deploy nesse
+intervalo custa um ponto da serie historica de todos os clientes.
+
+Os alertas por e-mail dependem de duas coisas: `OWNER_ORGANIZATION_ID` apontando
+para a SUA organizacao, e a conexao Google dela valida — o e-mail sai por ela. Se
+essa autorizacao cair, voce perde de uma vez o aviso de custo, o de queda da IA e
+o de conexoes, **sem nada avisar que os avisos pararam**.
 
 ## Operacao
 

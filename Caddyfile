@@ -10,6 +10,19 @@
 # colocaria a chave da Anthropic, a do Asaas e a CONNECTION_ENCRYPTION_KEY
 # dentro do processo mais atacavel da pilha, sem nenhuma necessidade.
 
+# `www` redireciona para o dominio nu.
+#
+# Sem este bloco, quem digitar www.katalli.com leva um erro de certificado — o
+# Caddy so emitiria para o dominio sem prefixo, e o navegador mostra aviso de
+# site inseguro antes de qualquer conteudo nosso. Metade das pessoas ainda
+# digita "www" por habito.
+#
+# Exige um registro A para `www` apontando para esta maquina, igual ao do
+# dominio nu: o desafio da Let's Encrypt e feito para cada nome separadamente.
+www.{$KATALLI_DOMINIO} {
+	redir https://{$KATALLI_DOMINIO}{uri} permanent
+}
+
 {$KATALLI_DOMINIO} {
 	# `app` e o nome do servico no compose: resolvido pela rede interna, nunca
 	# pela internet. A aplicacao nao publica porta nenhuma no host.
