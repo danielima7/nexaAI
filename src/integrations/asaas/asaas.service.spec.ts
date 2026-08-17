@@ -41,6 +41,17 @@ describe('AsaasService — coerencia entre chave e ambiente', () => {
     expect(() => usar(servico(HOST_PROD), CHAVE_HMLG)).toThrow(/mal configurada/i);
   });
 
+  it('reconhece as DUAS formas de host de homologacao', () => {
+    // A documentacao atual do Asaas usa `api-sandbox.asaas.com/v3`; o nosso
+    // padrao herdado usa `sandbox.asaas.com/api/v3`. As duas respondem, e a
+    // guarda precisa aceitar ambas — senao trocar para a URL nova da
+    // documentacao faria a integracao recusar uma configuracao correta.
+    const nova = 'https://api-sandbox.asaas.com/v3';
+
+    expect(() => usar(servico(nova), CHAVE_HMLG)).not.toThrow();
+    expect(() => usar(servico(nova), CHAVE_PROD)).toThrow(/mal configurada/i);
+  });
+
   it('o padrao sem configuracao e homologacao', () => {
     // Errar para sandbox nao move dinheiro de ninguem.
     expect(AsaasService.BASE_SANDBOX).toContain('sandbox');
