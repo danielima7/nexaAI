@@ -48,7 +48,7 @@ export class LandingController {
       );
       const email =
         this.config.get<string>('KATALLI_CONTATO_EMAIL') ??
-        'contato@katalli.com.br';
+        'katalli@katalli.com';
 
       // Sem WhatsApp configurado, o botao cai no e-mail em vez de sumir: uma
       // landing sem caminho de contato e so uma pagina bonita.
@@ -78,7 +78,7 @@ export class LandingController {
    * caminho de asset mudar no deploy. O gradiente e o mesmo da marca —
    * desenhada sobre fundo escuro, que e o motivo de a pagina ser escura.
    */
-  private static readonly LOGO = `<svg class="logo" viewBox="0 0 210 128" role="img" aria-label="Katalli">
+  private static readonly LOGO = `<svg class="logo" viewBox="0 0 210 144" role="img" aria-label="Katalli">
   <defs>
     <linearGradient id="katalliGrad" x1="0" y1="0.5" x2="1" y2="0.35">
       <stop offset="0%" stop-color="#1d4ed8"/>
@@ -89,7 +89,7 @@ export class LandingController {
   </defs>
   <g fill="none" stroke="url(#katalliGrad)" stroke-width="21" stroke-linecap="square">
     <path d="M105,64 C105,36 84,20 62,20 C36,20 16,39 16,64 C16,89 36,108 62,108 C84,108 105,92 105,64 C105,36 126,20 148,20 C174,20 194,39 194,64 C194,89 174,108 148,108"/>
-    <path d="M119,52 L186,124"/>
+    <path d="M105,64 L188,132"/>
   </g>
 </svg>`;
 
@@ -361,8 +361,8 @@ export class LandingController {
 <!-- EXEMPLOS -->
 <section class="painel">
   <div class="env">
-    <h2>Coisas que você pode perguntar</h2>
-    <p class="chamada">Sem comando, sem menu, sem treinamento. Escreva como escreveria para uma pessoa.</p>
+    <h2>Exemplos de consultas e comandos</h2>
+    <p class="chamada">Não há sintaxe a decorar nem menus a percorrer. Basta escrever em português, como se escreveria para uma pessoa.</p>
     <div class="perguntas">
       <span>Quem está com boleto vencido?</span>
       <span>Quanto tenho pra receber esse mês?</span>
@@ -502,16 +502,16 @@ Confirma o envio?</div>
     <h2>Como começa</h2>
     <div class="grade g3">
       <div class="cartao">
-        <h3>1. Conversamos</h3>
-        <p>Entendo o que você usa hoje e onde perde tempo. Se o Katalli não ajudar no seu caso, eu falo na hora.</p>
+        <h3>1. Conversa inicial</h3>
+        <p>Levantamento dos sistemas que a empresa já usa e dos pontos onde há perda de tempo. Se o Katalli não for adequado ao caso, isso é informado na própria conversa.</p>
       </div>
       <div class="cartao">
-        <h3>2. Conecto com você</h3>
-        <p>Cerca de 40 minutos para autorizar os sistemas e configurar o resumo diário. Você não instala nada.</p>
+        <h3>2. Configuração das integrações</h3>
+        <p>Autorização dos sistemas e configuração do resumo diário, feitas em conjunto. Não é necessário instalar nada.</p>
       </div>
       <div class="cartao">
-        <h3>3. Você usa e me diz</h3>
-        <p>A partir daí funciona no navegador, do celular ou do computador. Suporte direto comigo.</p>
+        <h3>3. Uso e acompanhamento</h3>
+        <p>O acesso funciona pelo navegador, no celular ou no computador, com suporte direto e sem intermediários.</p>
       </div>
     </div>
   </div>

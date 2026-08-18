@@ -343,7 +343,7 @@ export class ChatController {
     // cabecalho e na tela de login, e dois <linearGradient> com o mesmo id
     // tornam o documento invalido — alguns navegadores resolvem, outros
     // pintam o segundo simbolo com o gradiente errado.
-    return `<svg viewBox="0 0 210 128" role="img" aria-hidden="true" focusable="false">
+    return `<svg viewBox="0 0 210 144" role="img" aria-hidden="true" focusable="false">
   <defs>
     <linearGradient id="${id}" x1="0" y1="0.5" x2="1" y2="0.35">
       <stop offset="0%" stop-color="#1d4ed8"/><stop offset="38%" stop-color="#0ea5e9"/>
@@ -352,7 +352,7 @@ export class ChatController {
   </defs>
   <g fill="none" stroke="url(#${id})" stroke-width="21" stroke-linecap="square">
     <path d="M105,64 C105,36 84,20 62,20 C36,20 16,39 16,64 C16,89 36,108 62,108 C84,108 105,92 105,64 C105,36 126,20 148,20 C174,20 194,39 194,64 C194,89 174,108 148,108"/>
-    <path d="M119,52 L186,124"/>
+    <path d="M105,64 L188,132"/>
   </g>
 </svg>`;
   }

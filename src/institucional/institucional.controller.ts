@@ -62,7 +62,7 @@ export class InstitucionalController {
 
   private get email(): string {
     return (
-      this.config.get<string>('KATALLI_CONTATO_EMAIL') ?? 'contato@katalli.com'
+      this.config.get<string>('KATALLI_CONTATO_EMAIL') ?? 'katalli@katalli.com'
     );
   }
 

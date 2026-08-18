@@ -17,7 +17,73 @@ para as senhas do chat nem para as chaves que o cliente cola em `/integracoes`.
 `katalli.com` ja esta registrado. Nada a fazer aqui — o DNS e apontado no
 passo 3, quando ja houver um IP para colocar no registro.
 
-## 2. Servidor
+## 2A. Railway (PaaS) — caminho recomendado enquanto nao houver escala
+
+Sem servidor para administrar: a plataforma constroi a partir do `Dockerfile`,
+fornece TLS e mantem o processo vivo (necessario — ha quatro tarefas agendadas,
+e plataforma que hiberna nao executa cron).
+
+O `Caddyfile` e o `docker-compose.prod.yml` NAO sao usados aqui; ficam para o
+caminho de VPS, na secao 2B.
+
+### Passos
+
+1. **railway.com** → New Project → *Deploy from GitHub repo* → `nexaAI`.
+   O `Dockerfile` e detectado sozinho.
+2. **New → Database → PostgreSQL**, no mesmo projeto.
+3. No servico da aplicacao, aba **Variables**, defina tudo do `.env` local,
+   com estas diferencas:
+
+   | variavel | valor |
+   |---|---|
+   | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` — referencia, nao a URL copiada |
+   | `PUBLIC_BASE_URL` | `https://katalli.com` |
+   | `GOOGLE_REDIRECT_URI` | `https://katalli.com/google/callback` |
+   | `INSTAGRAM_REDIRECT_URI` | `https://katalli.com/instagram/callback` |
+   | `ASAAS_BASE_URL` | `https://api.asaas.com/v3` |
+   | `PORT` | nao defina — o Railway injeta, e o `main.ts` ja le do ambiente |
+
+   `DATABASE_URL` como **referencia** e nao como texto: se o Postgres for
+   recriado, a senha muda e a referencia acompanha sozinha.
+
+4. **Settings → Deploy → Custom Start Command**:
+
+   ```
+   npx prisma migrate deploy && node dist/main.js
+   ```
+
+   Aplica migracao pendente a cada deploy. E idempotente — `migrate deploy` so
+   executa o que falta. Funciona porque `prisma` esta em `dependencies`, e nao
+   em `devDependencies`: ele sobrevive ao `npm ci --omit=dev` da imagem.
+
+   > Mantenha **uma instancia**. Com duas subindo ao mesmo tempo, as duas
+   > tentariam migrar o banco simultaneamente.
+
+5. **Settings → Networking → Custom Domain** → `katalli.com`. O Railway devolve
+   um alvo de CNAME e um TXT de verificacao.
+
+### O DNS precisa sair do Squarespace
+
+O padrao DNS nao permite `CNAME` na raiz de um dominio. Provedores modernos
+contornam com `ALIAS`/`ANAME` ou *CNAME flattening*; **o Squarespace nao oferece
+nenhum dos dois** e esta na lista de incompativeis da documentacao do Railway.
+
+Mova os nameservers para o **Cloudflare** (gratuito):
+
+1. Crie conta em cloudflare.com e adicione `katalli.com`.
+2. O Cloudflare importa os registros existentes — **confira** se vieram o TXT
+   `google-site-verification`, o SPF, o DMARC e o DKIM. Recrie o que faltar.
+3. No Squarespace: Dominios → katalli.com → **Servidores de nomes de dominio**
+   → troque para os dois nameservers que o Cloudflare informar.
+4. No Cloudflare, crie o CNAME da raiz apontando para o alvo do Railway. O
+   flattening resolve para IP sozinho.
+5. Propagacao de nameserver leva de minutos a 24h.
+
+Alternativa sem trocar nameserver: usar `www.katalli.com` como endereco
+principal (CNAME funciona em subdominio) e configurar encaminhamento da raiz no
+Squarespace. Funciona, mas deixa o produto com `www` na URL.
+
+## 2B. Servidor (VPS)
 
 Serve qualquer VPS com Ubuntu 24.04 e Docker. Duas opcoes testadas:
 
