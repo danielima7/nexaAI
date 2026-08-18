@@ -19,10 +19,50 @@ passo 3, quando ja houver um IP para colocar no registro.
 
 ## 2. Servidor
 
-Crie a VPS (Hetzner Cloud → Add Server): Ubuntu 24.04, tipo CX22, e **adicione
-sua chave SSH na criacao** — evita a senha de root que chega por e-mail.
+Serve qualquer VPS com Ubuntu 24.04 e Docker. Duas opcoes testadas:
 
-Anote o IPv4. Depois, como root:
+**Oracle Cloud (Always Free)** — gratuito, e a unica com regiao no Brasil
+(Sao Paulo, ~10ms contra ~120ms dos EUA). Escolha a forma **VM.Standard.A1.Flex**
+com 4 OCPU e 24 GB. Nao pegue a `E2.1.Micro`: 1 GB de RAM nao sustenta
+Node + Postgres + Caddy juntos.
+
+> A A1 e **ARM (aarch64)**, nao x86. A pilha suporta: `node:22-alpine`,
+> `postgres:16-alpine` e `caddy:2-alpine` publicam arm64, e o `schema.prisma`
+> nao fixa `binaryTargets` — o client e gerado dentro do container, entao
+> detecta a arquitetura sozinho. Nao ha nada a mudar. **Nunca adicione
+> `platform:` no compose**: isso forcaria emulacao x86 e deixaria tudo lento.
+
+**Hetzner Cloud** — ~€7,50/mes, x86. Local mais proximo: Ashburn (US East).
+
+Em qualquer uma: Ubuntu 24.04 e **adicione sua chave SSH na criacao** — evita a
+senha de root que chega por e-mail e vira alvo de forca bruta em minutos.
+
+### Oracle: as duas barreiras de rede
+
+A Oracle bloqueia em DOIS lugares, e esquecer um deles produz o mesmo sintoma
+(o site nao responde, o Caddy nao consegue o certificado) sem mensagem util.
+
+**1. Security List da VCN** (no painel): Networking → Virtual Cloud Networks →
+sua VCN → Security Lists → Default → *Add Ingress Rules*, para as portas 80 e 443:
+
+| Source CIDR | Protocolo | Porta |
+|---|---|---|
+| `0.0.0.0/0` | TCP | 80 |
+| `0.0.0.0/0` | TCP | 443 |
+
+**2. iptables da propria instancia**: a imagem Ubuntu da Oracle ja vem com
+regras que barram tudo menos SSH. Dentro da maquina:
+
+```bash
+sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT
+sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
+sudo netfilter-persistent save
+```
+
+Se a capacidade ARM aparecer como indisponivel na regiao, tente de novo mais
+tarde ou na regiao vizinha (Vinhedo) — e comum e costuma liberar.
+
+Anote o IPv4. Depois, como root (ou com `sudo`, se entrar como `ubuntu`):
 
 ```bash
 # Usuario sem privilegio para rodar a aplicacao
