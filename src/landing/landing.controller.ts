@@ -97,7 +97,7 @@ export class LandingController {
 <html lang="pt-br"><head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Katalli — Converse com os sistemas da sua empresa</title>
+<title>Katalli: converse com os sistemas da sua empresa</title>
 <meta name="description" content="Pergunte em português e saiba quem está devendo, o que vence essa semana e o que aconteceu no seu CRM — sem abrir sistema nenhum."/>
 <style>
   /* Escuro porque a marca foi desenhada sobre preto: no fundo claro o
