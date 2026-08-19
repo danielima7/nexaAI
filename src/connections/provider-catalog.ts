@@ -93,6 +93,19 @@ export const PROVEDORES: ProvedorConectavel[] = [
     rotaOAuth: '/instagram/auth',
   },
   {
+    id: 'linkedin',
+    // So sugestao de PUBLICACAO: as permissoes abertas do LinkedIn nao deixam
+    // ler feed nem buscar perfis. Sugerir "quantas visualizacoes tive?" faria
+    // o cliente pedir algo que a API recusa.
+    sugestoes: ['Publica no LinkedIn que fechamos mais um cliente'],
+    nome: 'LinkedIn',
+    categoria: 'Redes sociais',
+    tipo: 'oauth',
+    ajuda:
+      'Permite PUBLICAR no seu perfil pela conversa. O LinkedIn nao libera leitura de feed nem busca de perfis sem parceria comercial. A autorizacao vale cerca de 60 dias.',
+    rotaOAuth: '/linkedin/auth',
+  },
+  {
     id: 'pluggy',
     sugestoes: ["Qual meu saldo bancario?", "Mostra as ultimas transacoes"],
     nome: 'Contas bancarias (Open Finance)',

@@ -23,6 +23,8 @@ export interface PerfilModelo {
   maxTokens: number;
   /** Ausente quando o modelo nao aceita o parametro (ver CAPACIDADES). */
   outputConfig?: Anthropic.OutputConfig;
+  /** Se este modelo suporta a ferramenta de busca web. */
+  aceitaBuscaWeb: boolean;
 }
 
 interface Capacidades {
@@ -40,6 +42,14 @@ interface Capacidades {
    * Por isso Haiku 4.5 nao pode receber o mesmo payload dos demais.
    */
   aceitaEffort: boolean;
+  /**
+   * Se aceita a ferramenta de busca web `web_search_20260209`.
+   *
+   * A variante com filtragem dinamica exige geracao 4.6+. Mandar esse tipo
+   * para um modelo antigo devolve 400 e derruba TODA resposta da rota — nao
+   * so a que ia pesquisar. Por isso e capacidade declarada, e nao tentativa.
+   */
+  aceitaBuscaWeb: boolean;
 }
 
 /**
@@ -53,10 +63,10 @@ interface Capacidades {
  * vez de degradar em producao.
  */
 const CAPACIDADES: Record<string, Capacidades> = {
-  'claude-opus-4-8': { pensaPorPadrao: false, aceitaEffort: true },
-  'claude-opus-5': { pensaPorPadrao: true, aceitaEffort: true },
-  'claude-sonnet-5': { pensaPorPadrao: true, aceitaEffort: true },
-  'claude-haiku-4-5': { pensaPorPadrao: false, aceitaEffort: false },
+  'claude-opus-4-8': { pensaPorPadrao: false, aceitaEffort: true, aceitaBuscaWeb: true },
+  'claude-opus-5': { pensaPorPadrao: true, aceitaEffort: true, aceitaBuscaWeb: true },
+  'claude-sonnet-5': { pensaPorPadrao: true, aceitaEffort: true, aceitaBuscaWeb: true },
+  'claude-haiku-4-5': { pensaPorPadrao: false, aceitaEffort: false, aceitaBuscaWeb: false },
 };
 
 /**
@@ -163,6 +173,7 @@ export class ModelRouterService implements OnModuleInit {
     const perfil: PerfilModelo = {
       model,
       maxTokens: MAX_TOKENS[faixa],
+      aceitaBuscaWeb: capacidades.aceitaBuscaWeb,
     };
 
     // `effort` so acompanha a faixa principal: na economica o objetivo e gasto

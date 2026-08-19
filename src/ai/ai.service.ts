@@ -7,6 +7,11 @@ import { ToolContext } from '../tools/tool.interface';
 import { ModelRouterService, RotaIa } from './model-router.service';
 import { AiUsageService } from './ai-usage.service';
 import { SaudeIaService } from './saude-ia.service';
+import {
+  FERRAMENTA_BUSCA_WEB,
+  podeBuscarNaWeb,
+  rodapeDeFontes,
+} from './busca-web';
 
 /**
  * Service de IA do Katalli (Claude / Anthropic).
@@ -37,6 +42,14 @@ export class AiService {
     'usuario pedir uma acao ou consulta que elas atendam. Nunca invente dados:',
     'se nao houver ferramenta para o que foi pedido, diga com clareza que essa',
     'integracao ainda nao esta disponivel.',
+    'Voce tambem pode ter BUSCA NA WEB. Use-a para o que nao esta nos sistemas',
+    'do cliente — encontrar empresas, conferir um endereco, pesquisar um',
+    'fornecedor, checar informacao publica. A regra de nao inventar continua',
+    'valendo e vale ainda mais aqui: nome, telefone, endereco ou CNPJ so podem',
+    'sair de um resultado de busca, nunca da sua memoria. Se a busca nao achar,',
+    'diga que nao encontrou em vez de completar com o que parece provavel.',
+    'Dados do cliente (financeiro, CRM, planilhas) vem SEMPRE das ferramentas',
+    'das integracoes, nunca da web.',
     'Antes de criar ou alterar qualquer dado (cadastrar, atualizar, enviar,',
     'adicionar linha em planilha), diga em uma frase o que sera feito e com',
     'quais valores, e espere o usuario confirmar. Consultas nao precisam de',
@@ -127,7 +140,16 @@ export class AiService {
       // Ferramentas disponiveis para esta audiencia (vazio = chat puro).
       // Conversa com publico externo so enxerga ferramentas marcadas como
       // `public`; o padrao (`owner`) mantem os canais atuais inalterados.
-      const toolDefs = this.tools.getDefinitions(context?.audience);
+      const toolDefs: unknown[] = [...this.tools.getDefinitions(context?.audience)];
+
+      // Busca web: ferramenta de SERVIDOR da Anthropic, executada por eles.
+      // Diferente das nossas, ela nao entra no loop de tool use — o resultado
+      // volta dentro da mesma resposta.
+      const buscando = podeBuscarNaWeb(
+        context?.audience,
+        perfil.aceitaBuscaWeb,
+      );
+      if (buscando) toolDefs.push(FERRAMENTA_BUSCA_WEB);
 
       // O papel do assistente muda conforme quem esta do outro lado.
       const system = this.montarSystem(context);
@@ -148,7 +170,9 @@ export class AiService {
             },
           ],
           messages,
-          ...(toolDefs.length > 0 ? { tools: toolDefs } : {}),
+          ...(toolDefs.length > 0
+            ? { tools: toolDefs as Anthropic.ToolUnion[] }
+            : {}),
           // Omitido nas faixas/modelos que nao aceitam o parametro — a geracao
           // 4.5 devolve 400 se receber `effort`.
           ...(perfil.outputConfig
@@ -179,6 +203,16 @@ export class AiService {
           },
           u,
         );
+
+        // A busca web roda num loop do lado da Anthropic. Se ele atinge o
+        // limite interno de iteracoes, a resposta volta com `pause_turn` e o
+        // texto ainda nao esta pronto. Reenviar o turno do assistente faz o
+        // servidor RETOMAR de onde parou — sem mensagem de usuario no meio,
+        // que atrapalharia a retomada.
+        if (response.stop_reason === 'pause_turn') {
+          messages.push({ role: 'assistant', content: response.content });
+          continue;
+        }
 
         // A IA quer usar uma ou mais ferramentas.
         if (response.stop_reason === 'tool_use') {
@@ -216,7 +250,12 @@ export class AiService {
           .join('')
           .trim();
 
-        return text || 'Desculpe, nao consegui gerar uma resposta agora.';
+        if (!text) return 'Desculpe, nao consegui gerar uma resposta agora.';
+
+        // As fontes acompanham a resposta quando ela veio de busca. Sem elas,
+        // uma lista de empresas e indistinguivel de uma lista inventada — e
+        // poder distinguir as duas e o motivo de a busca existir aqui.
+        return text + rodapeDeFontes(response.content);
       }
 
       // Estourou o limite de rodadas de ferramentas.
