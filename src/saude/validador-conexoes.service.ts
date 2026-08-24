@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConnectionsService } from '../connections/connections.service';
 import { GoogleService } from '../integrations/google/google.service';
 import { InstagramService } from '../integrations/instagram/instagram.service';
-import { LinkedinService } from '../integrations/linkedin/linkedin.service';
 
 /** Estado real de uma credencial, conferido contra a API do provedor. */
 export type EstadoConexao =
@@ -52,7 +51,6 @@ export class ValidadorConexoesService {
     private readonly connections: ConnectionsService,
     private readonly google: GoogleService,
     private readonly instagram: InstagramService,
-    private readonly linkedin: LinkedinService,
   ) {}
 
   /** Provedores que sabemos verificar. Os demais nao entram no diagnostico. */
@@ -70,14 +68,6 @@ export class ValidadorConexoesService {
       instagram: {
         envKey: 'INSTAGRAM_ACCESS_TOKEN',
         testar: (token) => this.instagram.getPerfil(token),
-      },
-      linkedin: {
-        envKey: 'LINKEDIN_ACCESS_TOKEN',
-        // /userinfo e a chamada mais barata que prova que o token vive. O
-        // token do LinkedIn vence em ~60 dias e nao tem refresh nas permissoes
-        // abertas: sem esta verificacao, o cliente so descobriria ao tentar
-        // publicar — e ai o post que ele queria fazer nao sai.
-        testar: (token) => this.linkedin.getMembro(token),
       },
     };
   }

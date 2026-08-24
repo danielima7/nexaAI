@@ -7,7 +7,6 @@ import { StripeModule } from './integrations/stripe/stripe.module';
 import { MercadopagoModule } from './integrations/mercadopago/mercadopago.module';
 import { AsaasModule } from './integrations/asaas/asaas.module';
 import { GoogleModule } from './integrations/google/google.module';
-import { LinkedinModule } from './integrations/linkedin/linkedin.module';
 import { PluggyModule } from './integrations/pluggy/pluggy.module';
 import { InstagramModule } from './integrations/instagram/instagram.module';
 import { ChatModule } from './chat/chat.module';
@@ -52,7 +51,6 @@ import { InstitucionalModule } from './institucional/institucional.module';
     MercadopagoModule,
     AsaasModule,
     GoogleModule,
-    LinkedinModule,
     PluggyModule,
     InstagramModule,
     ChatModule,

@@ -2,7 +2,6 @@ import { ValidadorConexoesService } from './validador-conexoes.service';
 import { ConnectionsService } from '../connections/connections.service';
 import { GoogleService } from '../integrations/google/google.service';
 import { InstagramService } from '../integrations/instagram/instagram.service';
-import { LinkedinService } from '../integrations/linkedin/linkedin.service';
 
 /**
  * A decisao que este service toma manda — ou nao manda — o cliente refazer um
@@ -73,16 +72,7 @@ describe('ValidadorConexoesService.verificar', () => {
       getPerfil: jest.fn(),
     } as unknown as InstagramService;
 
-    const linkedin = {
-      getMembro: jest.fn(),
-    } as unknown as LinkedinService;
-
-    return new ValidadorConexoesService(
-      connections,
-      google,
-      instagram,
-      linkedin,
-    );
+    return new ValidadorConexoesService(connections, google, instagram);
   }
 
   it('devolve ok quando o provedor aceita a credencial', async () => {

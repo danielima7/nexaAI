@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { GoogleModule } from '../integrations/google/google.module';
 import { InstagramModule } from '../integrations/instagram/instagram.module';
-import { LinkedinModule } from '../integrations/linkedin/linkedin.module';
 import { ValidadorConexoesService } from './validador-conexoes.service';
 
 /**
@@ -13,7 +12,7 @@ import { ValidadorConexoesService } from './validador-conexoes.service';
  * sozinho, nenhum dos dois precisa importar o outro.
  */
 @Module({
-  imports: [GoogleModule, InstagramModule, LinkedinModule],
+  imports: [GoogleModule, InstagramModule],
   providers: [ValidadorConexoesService],
   exports: [ValidadorConexoesService],
 })
