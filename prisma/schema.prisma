@@ -249,6 +249,38 @@ model AiUsage {
   @@index([modelo, createdAt])
 }
 
+/// Alguem que ja recebeu (ou recusou) contato de prospeccao.
+///
+/// POR QUE EXISTE: sem registro, prospeccao vira dano. O mesmo contato recebe
+/// a mesma abordagem tres vezes, quem pediu para parar continua recebendo, e
+/// nao ha como saber quantos e-mails sairam hoje — que e o numero que decide
+/// se o dominio sobrevive.
+///
+/// A unicidade e do BANCO, nao de uma conferencia em codigo: duplicar contato
+/// e o erro que mais custa reputacao, e checagem que depende de alguem lembrar
+/// de chamar acaba esquecida.
+model Prospecto {
+  id             String    @id @default(uuid())
+  organizationId String
+  /// Sempre em minusculas — quem digita a planilha nao padroniza caixa, e
+  /// "Joao@X.com" e "joao@x.com" sao a mesma pessoa recebendo duas vezes.
+  email          String
+  nome           String?
+  empresa        String?
+  /// De onde veio (nome da planilha, por exemplo). Serve para auditoria.
+  origem         String?
+  /// `contatado` | `respondeu` | `descadastrado`.
+  ///
+  /// `descadastrado` e definitivo: quem pediu para sair nao volta para a lista
+  /// por uma importacao nova de planilha.
+  status         String    @default("contatado")
+  contatadoEm    DateTime  @default(now())
+  observacao     String?
+
+  @@unique([organizationId, email])
+  @@index([organizationId, contatadoEm])
+}
+
 /// Uma medicao diaria de um numero do negocio do cliente.
 ///
 /// POR QUE ESTA TABELA EXISTE: Instagram, HubSpot e Gmail so respondem sobre o

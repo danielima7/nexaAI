@@ -20,6 +20,7 @@ import { HealthController } from './health/health.controller';
 import { UploadsModule } from './uploads/uploads.module';
 import { MetricasModule } from './metricas/metricas.module';
 import { PainelModule } from './painel/painel.module';
+import { ProspeccaoModule } from './prospeccao/prospeccao.module';
 import { SuporteModule } from './suporte/suporte.module';
 import { LandingModule } from './landing/landing.module';
 import { InstitucionalModule } from './institucional/institucional.module';
@@ -64,6 +65,8 @@ import { InstitucionalModule } from './institucional/institucional.module';
     MetricasModule,
     // Painel: graficos fixos que o cliente acompanha
     PainelModule,
+    // Prospeccao por e-mail, com controle de repeticao e teto diario
+    ProspeccaoModule,
     // Resumo diario proativo (depende de AiModule + WhatsappModule)
     ReportsModule,
   ],
