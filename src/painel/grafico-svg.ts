@@ -56,19 +56,54 @@ const AREA = {
 };
 
 /**
- * Escala vertical.
+ * Escala vertical — a regra depende da FORMA, nao do gosto.
  *
- * O zero SEMPRE entra no dominio. Comecar o eixo no menor valor faria uma
- * variacao de 2% parecer um desabamento — o classico grafico que mente sem
- * nenhum numero errado nele.
+ * Em barra, o comprimento da barra representa o valor: cortar a base faz uma
+ * diferenca de 2% parecer o dobro, e por isso o zero e obrigatorio.
+ *
+ * Em linha, quem informa e a inclinacao entre os pontos. Ali o zero forcado
+ * tem o efeito OPOSTO: uma serie de mil seguidores que varia dezenas vira uma
+ * reta perfeita, e o grafico deixa de mostrar justamente o que ele existe para
+ * mostrar. Foi o que aconteceu no primeiro painel de seguidores.
  */
-function escala(pontos: Ponto[]): { min: number; max: number } {
+function escala(
+  pontos: Ponto[],
+  tipo: 'barra' | 'linha' = 'barra',
+): { min: number; max: number } {
   const valores = pontos.map((p) => p.valor);
-  const max = Math.max(0, ...valores);
-  const min = Math.min(0, ...valores);
-  // Tudo zero: evita divisao por zero e desenha a linha de base.
-  if (max === min) return { min: 0, max: 1 };
-  return { min, max };
+  const alto = Math.max(...valores);
+  const baixo = Math.min(...valores);
+
+  // BARRA: o zero e obrigatorio. O comprimento da barra E o valor, entao
+  // cortar a base faz uma diferenca de 2% parecer o dobro.
+  if (tipo === 'barra') {
+    const max = Math.max(0, alto);
+    const min = Math.min(0, baixo);
+    if (max === min) return { min: 0, max: 1 };
+    return { min, max };
+  }
+
+  // LINHA: quem carrega a informacao e a inclinacao, nao a distancia ate o
+  // eixo. Forcar o zero numa serie de mil seguidores que varia dezenas achata
+  // tudo numa reta — o grafico fica bonito e nao mostra nada. Enquadrar os
+  // dados e a pratica padrao para acompanhamento no tempo, e continua honesto
+  // porque os rotulos do eixo mostram os valores reais.
+  //
+  // Valor negativo em cena traz o zero de volta: ali a fronteira entre positivo
+  // e negativo e informacao, nao decoracao.
+  if (baixo < 0) {
+    return { min: Math.min(0, baixo), max: Math.max(0, alto) };
+  }
+
+  if (alto === baixo) {
+    // Serie constante: uma faixa em volta do valor, para a reta ficar no meio
+    // em vez de colada na borda.
+    const folga = Math.abs(alto) * 0.1 || 1;
+    return { min: alto - folga, max: alto + folga };
+  }
+
+  const folga = (alto - baixo) * 0.15;
+  return { min: baixo - folga, max: alto + folga };
 }
 
 /** Quantos rotulos cabem no eixo X sem virar borrao. */
@@ -106,7 +141,7 @@ function barraPath(
 
 /** Grafico de barras — para categorias. */
 function barras(pontos: Ponto[]): string {
-  const { min, max } = escala(pontos);
+  const { min, max } = escala(pontos, 'barra');
   const amplitude = max - min;
   const larguraFaixa = AREA.largura / pontos.length;
   // Teto de 24px: barra grossa vira bloco de tinta e come o ar da faixa. O
@@ -140,11 +175,18 @@ function barras(pontos: Ponto[]): string {
 
 /** Grafico de linha — para evolucao no tempo. */
 function linha(pontos: Ponto[]): string {
-  const { min, max } = escala(pontos);
+  const { min, max } = escala(pontos, 'linha');
   const amplitude = max - min;
   // Com um ponto so nao ha reta: o divisor viraria zero.
   const passoX = pontos.length > 1 ? AREA.largura / (pontos.length - 1) : 0;
-  const y0 = MARGEM.topo + AREA.altura - ((0 - min) / amplitude) * AREA.altura;
+
+  // Base do preenchimento. Quando o eixo nao comeca no zero, a posicao do zero
+  // cai muito abaixo da area visivel — usa-la deixaria a linha de base fora da
+  // tela e a area preenchida saindo do desenho. Ancorar no fundo da area e o
+  // que mantem os dois dentro do quadro.
+  const fundo = MARGEM.topo + AREA.altura;
+  const zero = MARGEM.topo + AREA.altura - ((0 - min) / amplitude) * AREA.altura;
+  const y0 = Math.min(fundo, Math.max(MARGEM.topo, zero));
   const passo = passoDeRotulo(pontos.length);
 
   const coords = pontos.map((p, i) => ({
@@ -198,8 +240,8 @@ function linhaBase(y0: number): string {
 }
 
 /** Marcas do eixo Y: minimo, meio e maximo. Mais que isso vira poluicao. */
-function eixoY(pontos: Ponto[]): string {
-  const { min, max } = escala(pontos);
+function eixoY(pontos: Ponto[], tipo: 'barra' | 'linha'): string {
+  const { min, max } = escala(pontos, tipo);
   const valores = [max, (max + min) / 2, min].filter(
     (v, i, arr) => arr.indexOf(v) === i,
   );
@@ -237,7 +279,7 @@ export function desenhar(card: DadosCard): string {
   return (
     `<svg viewBox="0 0 ${LARGURA} ${ALTURA}" preserveAspectRatio="xMidYMid meet" ` +
     `role="img" aria-label="${esc(card.titulo)}. ${esc(resumo)}">` +
-    eixoY(pontos) +
+    eixoY(pontos, card.tipo === 'linha' ? 'linha' : 'barra') +
     corpo +
     '</svg>'
   );
