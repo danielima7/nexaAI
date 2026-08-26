@@ -11,6 +11,7 @@ function card(parcial: Partial<DadosCard>): DadosCard {
     linhasLidas: 0,
     linhasIgnoradas: 0,
     eixoTemporal: false,
+    acumulativo: true,
     ...parcial,
   };
 }
@@ -44,11 +45,11 @@ describe('desenhar', () => {
     expect(svg).toContain('&lt;b&gt;');
   });
 
-  it('sempre inclui o zero na escala', () => {
-    // Comecar o eixo no menor valor faria uma variacao de 2% parecer um
-    // desabamento — o grafico que mente sem ter nenhum numero errado.
+  it('BARRA sempre inclui o zero na escala', () => {
+    // O comprimento da barra E o valor: cortar a base faz 2% parecer o dobro.
     const svg = desenhar(
       card({
+        tipo: 'barra',
         pontos: [
           { rotulo: 'jan', valor: 1000 },
           { rotulo: 'fev', valor: 1020 },
@@ -56,8 +57,61 @@ describe('desenhar', () => {
       }),
     );
 
-    // A marca do eixo Y mais baixa tem que ser 0, nao 1000.
     expect(svg).toContain('>0<');
+  });
+
+  it('LINHA enquadra os dados em vez de forcar o zero', () => {
+    // Foi o bug do painel de seguidores: 8 medicoes entre 1080 e 1096 com o
+    // eixo no zero viravam uma reta perfeita, escondendo justamente a
+    // variacao que o grafico existe para mostrar.
+    const svg = desenhar(
+      card({
+        tipo: 'linha',
+        pontos: [
+          { rotulo: '19/08', valor: 1080 },
+          { rotulo: '20/08', valor: 1096 },
+          { rotulo: '21/08', valor: 1083 },
+        ],
+      }),
+    );
+
+    expect(svg).not.toContain('>0<');
+    // Os rotulos do eixo mostram a faixa real — e o que mantem honesto.
+    expect(svg).toMatch(/1\.0[6-9]\d|1\.1/);
+  });
+
+  it('LINHA traz o zero de volta quando ha valor negativo', () => {
+    // Com negativo em cena, a fronteira entre positivo e negativo e
+    // informacao — o dominio precisa cobri-la em vez de enquadrar so os dados.
+    //
+    // A conferencia e pelos EXTREMOS do eixo, nao por um rotulo "0": o eixo
+    // desenha tres marcas (maximo, meio, minimo) e o zero raramente cai em uma
+    // delas. Dominio de -50 a 120 prova que a faixa atravessa o zero.
+    const svg = desenhar(
+      card({
+        tipo: 'linha',
+        pontos: [
+          { rotulo: 'jan', valor: -50 },
+          { rotulo: 'fev', valor: 120 },
+        ],
+      }),
+    );
+
+    expect(svg).toContain('>-50<');
+    expect(svg).toContain('>120<');
+  });
+
+  it('LINHA constante nao cola a reta na borda', () => {
+    const svg = desenhar(
+      card({
+        tipo: 'linha',
+        pontos: [
+          { rotulo: 'a', valor: 500 },
+          { rotulo: 'b', valor: 500 },
+        ],
+      }),
+    );
+    expect(svg).not.toContain('NaN');
   });
 
   it('gera rotulo acessivel com os valores', () => {

@@ -48,6 +48,13 @@ export interface Indicador {
   provedor: 'instagram' | 'hubspot';
   /** Serie da tabela Metrica, quando `fonte` for historica. */
   chave?: string;
+  /**
+   * A metrica ACUMULA (fluxo) ou e uma fotografia (estoque)?
+   *
+   * Decide o numero em destaque: fluxo soma o periodo, estoque mostra o valor
+   * mais recente. Somar seguidores de oito dias devolve oito vezes a base.
+   */
+  acumulativo: boolean;
   /** Explicacao curta, usada pela IA ao confirmar com o cliente. */
   descricao: string;
 }
@@ -63,6 +70,7 @@ export interface Indicador {
 export const INDICADORES: Indicador[] = [
   {
     id: 'instagram_seguidores',
+    acumulativo: false,
     modulo: 'Redes sociais',
     titulo: 'Seguidores no Instagram',
     fonte: 'metrica_historica',
@@ -73,6 +81,7 @@ export const INDICADORES: Indicador[] = [
   },
   {
     id: 'instagram_alcance',
+    acumulativo: true,
     modulo: 'Redes sociais',
     titulo: 'Alcance no Instagram',
     fonte: 'metrica_historica',
@@ -83,6 +92,7 @@ export const INDICADORES: Indicador[] = [
   },
   {
     id: 'instagram_visualizacoes',
+    acumulativo: true,
     modulo: 'Redes sociais',
     titulo: 'Visualizacoes no Instagram',
     fonte: 'metrica_historica',
@@ -93,6 +103,7 @@ export const INDICADORES: Indicador[] = [
   },
   {
     id: 'instagram_interacoes',
+    acumulativo: true,
     modulo: 'Redes sociais',
     titulo: 'Interacoes no Instagram',
     fonte: 'metrica_historica',
@@ -103,6 +114,7 @@ export const INDICADORES: Indicador[] = [
   },
   {
     id: 'hubspot_funil',
+    acumulativo: true,
     modulo: 'CRM',
     titulo: 'Funil de vendas',
     fonte: 'hubspot_funil',
@@ -112,6 +124,7 @@ export const INDICADORES: Indicador[] = [
   },
   {
     id: 'hubspot_funil_evolucao',
+    acumulativo: false,
     modulo: 'CRM',
     titulo: 'Valor do funil ao longo do tempo',
     fonte: 'metrica_historica',
@@ -122,6 +135,7 @@ export const INDICADORES: Indicador[] = [
   },
   {
     id: 'hubspot_negocios',
+    acumulativo: false,
     modulo: 'CRM',
     titulo: 'Negocios em aberto',
     fonte: 'metrica_historica',

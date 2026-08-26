@@ -10,6 +10,7 @@ import type { Response } from 'express';
 import { PainelService } from './painel.service';
 import { ChatAuthService } from '../chat/chat-auth.service';
 import { desenhar, porExtenso } from './grafico-svg';
+import { DadosCard } from './painel.types';
 
 /**
  * Aba Painel: os graficos que o cliente pediu no chat, prontos para olhar.
@@ -76,17 +77,43 @@ export class PainelController {
         erro: c.erro,
         aviso: c.aviso,
         svg: c.erro ? undefined : desenhar(c),
-        // Total sempre acompanha o grafico: e o numero que o dono da PME
-        // procura primeiro, e ler altura de barra nao substitui ver o valor.
-        total: c.erro
+        // O numero em destaque: o dono da PME olha ele antes do grafico.
+        //
+        // SOMA so quando a metrica acumula. Para estoque — seguidores, saldo,
+        // valor do funil — vale o ultimo ponto medido: somar oito dias de mil
+        // seguidores devolvia oito mil, numero que a empresa nunca teve e que
+        // parecia correto na tela.
+        total: c.erro ? undefined : PainelController.numeroDestaque(c),
+        // O rotulo vem junto porque o mesmo lugar da tela passa a mostrar
+        // coisas diferentes; sem ele o cliente nao sabe o que esta lendo.
+        rotuloTotal: c.erro
           ? undefined
-          : porExtenso(c.pontos.reduce((s, p) => s + p.valor, 0)),
+          : c.acumulativo
+            ? c.eixoTemporal
+              ? 'no período'
+              : 'total'
+            : 'atual',
         pontos: c.pontos.length,
         eixoTemporal: c.eixoTemporal,
         linhasLidas: c.linhasLidas,
         linhasIgnoradas: c.linhasIgnoradas,
       })),
     };
+  }
+
+  /**
+   * Numero em destaque do card.
+   *
+   * Fluxo soma o periodo; estoque mostra a medicao mais recente. A serie ja
+   * chega ordenada cronologicamente, entao o ultimo ponto e o de hoje.
+   */
+  private static numeroDestaque(c: DadosCard): string {
+    if (c.pontos.length === 0) return porExtenso(0);
+
+    if (c.acumulativo) {
+      return porExtenso(c.pontos.reduce((s, p) => s + p.valor, 0));
+    }
+    return porExtenso(c.pontos[c.pontos.length - 1].valor);
   }
 
   @Get()
@@ -185,7 +212,9 @@ export class PainelController {
           padding:18px; }
   .card h3 { font-size:15px; margin:0; font-weight:650; letter-spacing:-.01em; }
   .cabeca { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:2px; }
-  .total { margin-left:auto; font-size:19px; font-weight:700; letter-spacing:-.02em; }
+  .total { margin-left:auto; display:flex; align-items:baseline; gap:6px; }
+  .total .num { font-size:19px; font-weight:700; letter-spacing:-.02em; }
+  .total .rot { font-size:11.5px; color:var(--tinta-tenue); }
   .sub { color:var(--tinta-tenue); font-size:12.5px; margin:0 0 14px;
          display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 
@@ -322,7 +351,7 @@ export class PainelController {
 
     const rodape = elemento('div', 'rodape');
     if (c.variacao) rodape.appendChild(selo(c.variacao));
-    rodape.appendChild(elemento('span', null, c.modulo));
+    rodape.appendChild(elemento('span', null, c.rotuloTotal ? c.rotuloTotal + ' · ' + c.modulo : c.modulo));
     kpi.appendChild(rodape);
     return kpi;
   }
@@ -333,7 +362,15 @@ export class PainelController {
     const cabeca = elemento('div', 'cabeca');
     cabeca.appendChild(elemento('h3', null, c.titulo));
     if (c.total !== undefined) {
-      cabeca.appendChild(elemento('div', 'total', c.total));
+      const bloco = elemento('div', 'total');
+      bloco.appendChild(elemento('span', 'num', c.total));
+      // "atual" ou "no período": o mesmo lugar da tela mostra coisas
+      // diferentes conforme a métrica, e sem o rótulo o cliente não sabe se
+      // está lendo um acumulado ou a medição de hoje.
+      if (c.rotuloTotal) {
+        bloco.appendChild(elemento('span', 'rot', c.rotuloTotal));
+      }
+      cabeca.appendChild(bloco);
     }
     card.appendChild(cabeca);
 

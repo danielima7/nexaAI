@@ -73,6 +73,19 @@ export interface DadosCard {
   tipo: TipoGrafico;
   /** Secao do painel (Redes sociais, CRM, Planilhas...). */
   modulo: string;
+  /**
+   * A metrica ACUMULA ao longo do tempo, ou e uma fotografia de cada dia?
+   *
+   * A distincao decide o numero em destaque no card, e errar nela produz um
+   * numero absurdo com cara de correto:
+   *
+   *  - FLUXO (`true`): alcance por dia, vendas por mes, interacoes. Cada ponto
+   *    e uma quantidade nova, e somar o periodo faz sentido.
+   *  - ESTOQUE (`false`): seguidores, saldo, valor do funil. Cada ponto e o
+   *    estado naquele dia. Somar oito medicoes de mil seguidores devolve oito
+   *    mil seguidores, que a empresa nunca teve.
+   */
+  acumulativo: boolean;
   /** Variacao no periodo, quando faz sentido calcular. */
   variacao?: Variacao;
   pontos: Ponto[];

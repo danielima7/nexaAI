@@ -230,6 +230,12 @@ export class PainelService {
       tipo: card.tipo as TipoGrafico,
       pontos,
       modulo: PainelService.moduloDoCard('metrica_historica', config),
+      // Sem indicador no catalogo, assume ESTOQUE: uma serie diaria de origem
+      // desconhecida tem muito mais chance de ser uma medicao repetida (saldo,
+      // total, contagem) do que uma quantidade nova a cada dia. E errar para
+      // estoque mostra um valor plausivel; errar para fluxo multiplica a base.
+      acumulativo:
+        INDICADORES.find((i) => i.chave === config.chave)?.acumulativo ?? false,
       variacao: PainelService.variacao(pontos, true, config.dias ?? 90),
       linhasLidas: pontos.length,
       linhasIgnoradas: 0,
@@ -289,6 +295,8 @@ export class PainelService {
       tipo: card.tipo as TipoGrafico,
       pontos,
       modulo: 'CRM',
+      // Somar os estagios da o valor total em negociacao — numero que existe.
+      acumulativo: true,
       linhasLidas: funil.total,
       linhasIgnoradas: 0,
       eixoTemporal: false,
@@ -391,6 +399,10 @@ export class PainelService {
       titulo: card.titulo,
       tipo: card.tipo as TipoGrafico,
       modulo: 'Planilhas',
+      // Planilha com categorias (produto, vendedor) soma naturalmente. Com
+      // datas, quem escolheu a agregacao foi o cliente ao criar o grafico —
+      // somar o periodo e o que corresponde ao que ele pediu.
+      acumulativo: true,
       pontos: serie.pontos,
       linhasLidas: serie.linhasLidas,
       linhasIgnoradas: serie.linhasIgnoradas,
@@ -410,6 +422,7 @@ export class PainelService {
       // O modulo vem mesmo no erro: o card precisa aparecer na secao certa,
       // senao o cliente nao descobre qual integracao esta com problema.
       modulo: PainelService.moduloDoCard(card.fonte, card.config),
+      acumulativo: false,
       pontos: [],
       linhasLidas: 0,
       linhasIgnoradas: 0,
