@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { WhatsappModule } from '../integrations/whatsapp/whatsapp.module';
 import { ConsentimentoModule } from './consentimento.module';
-import { ConsentimentoService } from './consentimento.service';
 import { TemplateService } from './template.service';
 import { EnvioWhatsappService } from './envio-whatsapp.service';
 import { WhatsappEnvioTools } from './whatsapp-envio.tools';
@@ -17,6 +16,10 @@ import { WhatsappEnvioTools } from './whatsapp-envio.tools';
 @Module({
   imports: [WhatsappModule, ConsentimentoModule],
   providers: [TemplateService, EnvioWhatsappService, WhatsappEnvioTools],
-  exports: [ConsentimentoService, TemplateService, EnvioWhatsappService],
+  // Reexporta o MODULO, nao o service: quem prove ConsentimentoService e o
+  // ConsentimentoModule, e o Nest recusa exportar um provider que este modulo
+  // nao declara. Assim quem importar WhatsappEnvioModule continua enxergando
+  // consentimento, templates e envio de uma vez so.
+  exports: [ConsentimentoModule, TemplateService, EnvioWhatsappService],
 })
 export class WhatsappEnvioModule {}
