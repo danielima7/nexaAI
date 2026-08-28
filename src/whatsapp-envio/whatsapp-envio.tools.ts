@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ToolRegistryService } from '../tools/tool-registry.service';
 import { ToolContext } from '../tools/tool.interface';
 import { ConsentimentoService } from './consentimento.service';
@@ -14,8 +14,6 @@ import { EnvioWhatsappService } from './envio-whatsapp.service';
  */
 @Injectable()
 export class WhatsappEnvioTools implements OnModuleInit {
-  private readonly logger = new Logger(WhatsappEnvioTools.name);
-
   constructor(
     private readonly registry: ToolRegistryService,
     private readonly consentimento: ConsentimentoService,
