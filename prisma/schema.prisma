@@ -249,6 +249,70 @@ model AiUsage {
   @@index([modelo, createdAt])
 }
 
+/// Autorizacao de um contato para receber mensagens no WhatsApp.
+///
+/// A politica do WhatsApp e literal: so e permitido escrever para alguem que
+/// (a) forneceu o proprio numero e (b) autorizou receber mensagens. Sem esse
+/// registro, a empresa nao tem como provar o consentimento — e a consequencia
+/// documentada e "encerramento da conta e proibicao futura de usar qualquer
+/// servico WhatsApp".
+///
+/// Guardamos COMO o consentimento foi obtido, e nao apenas que existe: e essa
+/// frase que se mostra quando a Meta ou o titular perguntam. "Marcou a caixa no
+/// formulario de pedido em 03/09" vale; "estava numa lista" nao vale nada.
+model ConsentimentoWhatsapp {
+  id             String    @id @default(uuid())
+  organizationId String
+  /// Numero em formato internacional, so digitos (5524999998888).
+  telefone       String
+  nome           String?
+  /// `ativo` | `revogado`. Revogacao nunca e apagada — some do envio, fica no
+  /// historico, porque a prova de que o pedido foi respeitado tambem importa.
+  status         String    @default("ativo")
+  /// Onde e quando a pessoa autorizou. Texto livre, obrigatorio na pratica.
+  origem         String
+  consentidoEm   DateTime  @default(now())
+  revogadoEm     DateTime?
+  /// Ultima mensagem RECEBIDA deste contato.
+  ///
+  /// Define a janela de 24h: dentro dela a empresa responde livremente; fora,
+  /// so template aprovado. Sem esta data nao ha como saber em qual regime a
+  /// proxima mensagem cai.
+  ultimaEntradaEm DateTime?
+
+  @@unique([organizationId, telefone])
+  @@index([organizationId, status])
+}
+
+/// Modelo de mensagem aprovado pela Meta.
+///
+/// Fora da janela de 24h, o WhatsApp so aceita mensagem iniciada pela empresa
+/// se ela usar um template previamente aprovado. Texto livre e recusado pela
+/// API — nao e uma boa pratica nossa, e a regra da plataforma.
+///
+/// O corpo fica guardado aqui tambem, e nao so na Meta, para conseguirmos
+/// mostrar a previa ao cliente e conferir a quantidade de variaveis ANTES de
+/// enviar. Template com variavel faltando e recusado no envio, quando ja e
+/// tarde para corrigir a redacao.
+model TemplateWhatsapp {
+  id             String   @id @default(uuid())
+  organizationId String
+  /// Nome exato cadastrado na Meta (ex: `lembrete_vencimento`).
+  nome           String
+  /// Codigo do idioma na Meta (ex: `pt_BR`).
+  idioma         String   @default("pt_BR")
+  /// Texto com marcadores {{1}}, {{2}}. Serve para previa e validacao.
+  corpo          String
+  /// Quantas variaveis o corpo espera. Derivado, guardado para conferir rapido.
+  variaveis      Int      @default(0)
+  /// `rascunho` | `aprovado` | `reprovado`. Só `aprovado` pode ser enviado.
+  status         String   @default("rascunho")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([organizationId, nome, idioma])
+}
+
 /// Alguem que ja recebeu (ou recusou) contato de prospeccao.
 ///
 /// POR QUE EXISTE: sem registro, prospeccao vira dano. O mesmo contato recebe

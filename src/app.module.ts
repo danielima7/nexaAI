@@ -21,6 +21,7 @@ import { UploadsModule } from './uploads/uploads.module';
 import { MetricasModule } from './metricas/metricas.module';
 import { PainelModule } from './painel/painel.module';
 import { ProspeccaoModule } from './prospeccao/prospeccao.module';
+import { WhatsappEnvioModule } from './whatsapp-envio/whatsapp-envio.module';
 import { SuporteModule } from './suporte/suporte.module';
 import { LandingModule } from './landing/landing.module';
 import { InstitucionalModule } from './institucional/institucional.module';
@@ -67,6 +68,8 @@ import { InstitucionalModule } from './institucional/institucional.module';
     PainelModule,
     // Prospeccao por e-mail, com controle de repeticao e teto diario
     ProspeccaoModule,
+    // Consentimento e templates para envio ativo no WhatsApp
+    WhatsappEnvioModule,
     // Resumo diario proativo (depende de AiModule + WhatsappModule)
     ReportsModule,
   ],

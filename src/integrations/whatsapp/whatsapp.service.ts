@@ -4,6 +4,7 @@ import axios from 'axios';
 import { AiService } from '../../ai/ai.service';
 import { ConversationMemoryService } from '../../ai/conversation-memory.service';
 import { TenantService } from '../../tenant/tenant.service';
+import { ConsentimentoService } from '../../whatsapp-envio/consentimento.service';
 
 /**
  * Service da integracao com o WhatsApp Business Platform (Meta Cloud API).
@@ -24,6 +25,7 @@ export class WhatsappService {
     private readonly ai: AiService,
     private readonly memory: ConversationMemoryService,
     private readonly tenant: TenantService,
+    private readonly consentimento: ConsentimentoService,
   ) {}
 
   /**
@@ -54,6 +56,10 @@ export class WhatsappService {
     // 0. Resolve (ou cria) a organizacao e o usuario deste numero (multi-tenant).
     const { user, organization } = await this.tenant.resolveByWhatsapp(from);
     const scope = { organizationId: organization.id, userId: user.id };
+
+    // 0.1. Abre a janela de 24h. Precisa vir ANTES da resposta: a plataforma so
+    //      aceita texto livre dentro dela, e quem envia e o mesmo fluxo abaixo.
+    await this.consentimento.registrarEntrada(organization.id, from);
 
     // 1. Guarda a mensagem do usuario no historico da conversa (escopada).
     await this.memory.append(from, { role: 'user', content: text }, scope);
